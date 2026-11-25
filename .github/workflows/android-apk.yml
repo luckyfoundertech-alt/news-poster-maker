@@ -59,6 +59,63 @@ jobs:
           if n3 != 1 or n4 != 1 or "#/generate" in s or "loadLooks" in s or "PosterBloom" in s:
               raise SystemExit(f"Home AI UI patch mismatch: section={n3}, bloom={n4}")
           home.write_text(s)
+
+          # Use Android's native file/share APIs for exports inside the Capacitor WebView.
+          exp = Path("apps/editor/src/export/exporters.ts")
+          s = exp.read_text()
+          if "from '@capacitor/filesystem'" not in s:
+              s = s.replace(
+                  "import { safeLink } from '../render/safe';",
+                  "import { safeLink } from '../render/safe';\nimport { Capacitor } from '@capacitor/core';\nimport { Directory, Filesystem } from '@capacitor/filesystem';\nimport { Share } from '@capacitor/share';"
+              )
+          old_download = """export function download(blob: Blob, name: string) {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = name;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            setTimeout(() => URL.revokeObjectURL(url), 4000);
+          }"""
+          new_download = """export async function download(blob: Blob, name: string) {
+            if (Capacitor.isNativePlatform()) {
+              const bytes = new Uint8Array(await blob.arrayBuffer());
+              let binary = '';
+              const chunk = 0x8000;
+              for (let i = 0; i < bytes.length; i += chunk) {
+                binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
+              }
+              const saved = await Filesystem.writeFile({
+                path: name,
+                data: btoa(binary),
+                directory: Directory.Cache,
+                recursive: true,
+              });
+              await Share.share({
+                title: name,
+                text: 'NEWS Studio export',
+                url: saved.uri,
+                dialogTitle: 'Save or share your design',
+              });
+              return;
+            }
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = name;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            setTimeout(() => URL.revokeObjectURL(url), 4000);
+          }"""
+          if old_download not in s:
+              raise SystemExit("Native export patch: download function not found")
+          s = s.replace(old_download, new_download, 1)
+          s, calls = re.subn(r"(?<!function )\\bdownload\\(", "await download(", s)
+          if calls < 8:
+              raise SystemExit(f"Native export patch: expected export call sites, found {calls}")
+          exp.write_text(s)
           PY
       - name: Build full OpenTempl editor and template library
         working-directory: opentempl
@@ -91,8 +148,10 @@ jobs:
               raise SystemExit(f"Template packs missing for: {', '.join(missing[:10])}")
           print(f"Verified {len(templates)} templates across {len(vibes)} design styles.")
           PY
-      - name: Install Android shell dependencies
-        run: npm install
+      - name: Install Android shell dependencies and native export plugins
+        run: |
+          npm install
+          npm install @capacitor/filesystem@^7.1.4 @capacitor/share@^7.0.2
       - name: Generate Android project
         run: npx cap add android
       - name: Sync full editor into Android
