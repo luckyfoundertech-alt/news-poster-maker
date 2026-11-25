@@ -358,6 +358,9 @@ jobs:
           PY
       - name: Sync full editor into Android
         run: npx cap sync android
+      - name: Print Android debug signing SHA-1 for Firebase Google Sign-In setup
+        working-directory: android
+        run: ./gradlew :app:signingReport
       - name: Build installable debug APK
         working-directory: android
         run: ./gradlew assembleDebug
