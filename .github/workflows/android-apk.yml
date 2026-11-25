@@ -295,7 +295,7 @@ jobs:
           npm install --no-fund
           npm install -w @opentempl/editor @capacitor/core@^7.1.0 @capacitor/filesystem@^7.1.4 @capacitor/share@^7.0.2 firebase@^12.6.0 @capacitor-firebase/authentication@^7.2.0 --no-fund
           # Apply only non-breaking fixes. Never use npm audit fix --force in release builds.
-          npm audit fix --no-fund
+          npm audit fix --no-fund || echo "::warning::npm audit fix could not resolve all advisories without breaking changes; continuing to compile and package APK."
           mkdir -p security-reports
           # Keep the full audit report, but do not suppress the APK build when advisories remain.
           npm audit --json > security-reports/npm-audit.json || true
