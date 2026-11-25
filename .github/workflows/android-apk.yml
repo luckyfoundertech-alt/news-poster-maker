@@ -16,6 +16,11 @@ permissions:
 jobs:
   build-apk:
     runs-on: ubuntu-latest
+    env:
+      ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+      ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+      ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+      ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
     steps:
       - name: Checkout NEWS Android shell
         uses: actions/checkout@v4
@@ -369,6 +374,52 @@ jobs:
       - name: Build installable debug APK
         working-directory: android
         run: ./gradlew assembleDebug
+      - name: Build signed production APK and AAB when release secrets are configured
+        if: ${{ env.ANDROID_KEYSTORE_BASE64 != '' && env.ANDROID_KEY_ALIAS != '' && env.ANDROID_KEYSTORE_PASSWORD != '' && env.ANDROID_KEY_PASSWORD != '' }}
+        env:
+          ANDROID_KEYSTORE_PATH: ${{ github.workspace }}/android/app/release.keystore
+        run: |
+          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$ANDROID_KEYSTORE_PATH"
+          python3 - <<'PY'
+          from pathlib import Path
+          gradle = Path("android/app/build.gradle")
+          body = gradle.read_text()
+          if "signingConfigs.release" not in body:
+              body += """
+          
+          android {
+              signingConfigs {
+                  release {
+                      storeFile file(System.getenv('ANDROID_KEYSTORE_PATH'))
+                      storePassword System.getenv('ANDROID_KEYSTORE_PASSWORD')
+                      keyAlias System.getenv('ANDROID_KEY_ALIAS')
+                      keyPassword System.getenv('ANDROID_KEY_PASSWORD')
+                  }
+              }
+              buildTypes {
+                  release {
+                      signingConfig signingConfigs.release
+                  }
+              }
+          }
+          """
+              gradle.write_text(body)
+          PY
+          cd android
+          ./gradlew bundleRelease assembleRelease
+      - name: Upload signed production AAB and APK
+        if: ${{ env.ANDROID_KEYSTORE_BASE64 != '' && env.ANDROID_KEY_ALIAS != '' && env.ANDROID_KEYSTORE_PASSWORD != '' && env.ANDROID_KEY_PASSWORD != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: NEWS-Studio-Production-Release
+          path: |
+            android/app/build/outputs/bundle/release/*.aab
+            android/app/build/outputs/apk/release/*.apk
+          if-no-files-found: error
+          retention-days: 90
+      - name: Explain unsigned-only build
+        if: ${{ env.ANDROID_KEYSTORE_BASE64 == '' || env.ANDROID_KEY_ALIAS == '' || env.ANDROID_KEYSTORE_PASSWORD == '' || env.ANDROID_KEY_PASSWORD == '' }}
+        run: echo "::warning::Release signing secrets are not configured. Debug APK built; signed Play Store release skipped."
       - name: Print Android debug signing SHA-1 for Firebase Google Sign-In setup
         run: |
           KEYSTORE="$HOME/.config/.android/debug.keystore"
