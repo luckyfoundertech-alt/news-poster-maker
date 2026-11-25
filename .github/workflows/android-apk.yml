@@ -82,10 +82,12 @@ jobs:
           adjust.write_text(body)
           start = Path("apps/editor/src/start/Start.tsx")
           body = start.read_text()
-          body, removed = re.subn(r"  \\{ icon: 'wand', name: 'Remove background'.*?\\n", "", body)
+          lines = body.splitlines(keepends=True)
+          kept = [line for line in lines if "name: 'Remove background'" not in line]
+          removed = len(lines) - len(kept)
           if removed != 1:
               raise SystemExit(f"AI background-removal feature card mismatch: {removed}")
-          start.write_text(body)
+          start.write_text("".join(kept))
           for path in ["apps/editor/src/tools/magicLayers.ts", "apps/editor/src/tools/removeBackground.ts"]:
               Path(path).unlink(missing_ok=True)
           ai_refs = []
