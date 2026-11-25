@@ -43,7 +43,26 @@ jobs:
           rm -rf www/*
           cp -a opentempl/dist/app/. www/
           sed -i 's/OpenTempl: free open source Canva alternative/NEWS Studio — Design Editor/g' www/index.html
+          sed -i 's/<title>OpenTempl/<title>NEWS Studio/' www/index.html
           cp opentempl/LICENSE OPEN-TEMPL-LICENSE
+      - name: Verify the full template library is packaged
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          index = Path("www/templates/index.json")
+          if not index.exists():
+              raise SystemExit("Template library index missing from Android app")
+          data = json.loads(index.read_text(encoding="utf-8"))
+          templates = data.get("templates", [])
+          vibes = data.get("vibes", {})
+          if len(templates) < 300:
+              raise SystemExit(f"Expected 300+ templates, found {len(templates)}")
+          missing = [t.get("id", "?") for t in templates if not (Path("www/templates") / f"{t.get('vibe')}.json").exists()]
+          if missing:
+              raise SystemExit(f"Template packs missing for: {', '.join(missing[:10])}")
+          print(f"Verified {len(templates)} templates across {len(vibes)} design styles.")
+          PY
       - name: Install Android shell dependencies
         run: npm install
       - name: Generate Android project
