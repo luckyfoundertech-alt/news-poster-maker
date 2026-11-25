@@ -9,6 +9,7 @@ on:
       - 'package-lock.json'
       - 'capacitor.config.json'
       - 'google-services.json'
+      - 'scripts/**'
       - '.github/workflows/android-apk.yml'
 permissions:
   contents: read
