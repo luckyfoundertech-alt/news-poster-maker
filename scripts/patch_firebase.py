@@ -63,6 +63,7 @@ export async function deleteDesignCloud(uid: string, id: string) {
 
 export async function restoreCloudDesigns(uid: string) {
   const rows = await getDocs(collection(firestore, 'users', uid, 'designs'));
+  const remoteById = new Map(rows.docs.map((row) => [row.id, row.data()]));
   for (const row of rows.docs) {
     const remote = row.data() as { id: string; title: string; width: number; height: number; formatId?: string | null; createdAt: number; updatedAt: number; pages: number; statePath: string };
     if (!remote.id || !remote.statePath) continue;
