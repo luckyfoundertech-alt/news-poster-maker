@@ -6,19 +6,20 @@ Firebase Android App ID: `1:519573612826:android:8568296d317fa86bcfa4a3`
 
 ## Current GitHub Actions debug SHA-1
 
-Add this exact fingerprint under Firebase Console → Project settings → Your apps → Android app → SHA certificate fingerprints:
+Use the exact SHA-1 printed by the **Print Android debug signing SHA-1 for Firebase Google Sign-In setup** step in the latest successful Android build:
 
 ```
-2D:15:5C:76:48:D0:D3:12:14:C8:71:2F:86:66:3D:E5:3A:E8:AE:92
+Read the SHA-1 from the latest successful GitHub Actions run.
 ```
 
-This is the SHA-1 printed by the latest successful Android CI build (25 November 2026). The earlier fingerprint in this document was stale.
+The workflow now caches its CI debug keystore under a fixed cache key so the debug certificate fingerprint remains stable across subsequent builds. The previously recorded fingerprint `2D:15:5C:76:48:D0:D3:12:14:C8:71:2F:86:66:3D:E5:3A:E8:AE:92` came from an earlier runner and should not be assumed to match the warmed cache.
 
-After adding the fingerprint:
-1. In Firebase Console → Authentication → Sign-in method, enable Google.
-2. Download a fresh `google-services.json` for package `com.luckyfoundertech.news`.
-3. Replace the repository-root `google-services.json` and commit it.
-4. Confirm the refreshed file contains an OAuth client entry for this Android app. The currently committed file has an empty `oauth_client` array, so Google Sign-In cannot be considered configured until the refreshed file is committed.
+After the first successful build with the cache step:
+1. Copy the SHA-1 printed in that run into Firebase Console → Project settings → Your apps → Android app → SHA certificate fingerprints.
+2. In Firebase Console → Authentication → Sign-in method, enable Google.
+3. Download a fresh `google-services.json` for package `com.luckyfoundertech.news`.
+4. Replace the repository-root `google-services.json` and commit it.
+5. Confirm the refreshed file contains an OAuth client entry for this Android app. The currently committed file has an empty `oauth_client` array, so Google Sign-In cannot be considered configured until the refreshed file is committed.
 
 A Play Store release keystore has a different SHA-1 and SHA-256. Add those release fingerprints to Firebase as well after creating and securely storing the release signing key. Never commit the keystore or its passwords.
 
