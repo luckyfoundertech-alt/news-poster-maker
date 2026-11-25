@@ -334,15 +334,15 @@ jobs:
           if "com.google.gms:google-services" not in body:
               if "dependencies {" not in body:
                   raise SystemExit("Could not find root Gradle dependencies block")
-              body = body.replace("dependencies {", "dependencies {\\n        classpath 'com.google.gms:google-services:4.4.2'", 1)
+              body = body.replace("dependencies {", "dependencies {\n        classpath 'com.google.gms:google-services:4.4.2'", 1)
               root.write_text(body)
           app = Path("android/app/build.gradle")
           body = app.read_text()
           if "com.google.gms.google-services" not in body:
-              if re.search(r"plugins\\s*\\{", body):
-                  body = re.sub(r"(plugins\\s*\\{)", r"\\1\\n    id 'com.google.gms.google-services'", body, count=1)
+              if re.search(r"plugins\s*\{", body):
+                  body = re.sub(r"(plugins\s*\{)", r"\1\n    id 'com.google.gms.google-services'", body, count=1)
               else:
-                  body = "apply plugin: 'com.google.gms.google-services'\\n" + body
+                  body = "apply plugin: 'com.google.gms.google-services'\n" + body
               app.write_text(body)
           variables = Path("android/variables.gradle")
           if variables.exists():
@@ -350,7 +350,7 @@ jobs:
               if "rgcfaIncludeGoogle" not in body:
                   if "ext {" not in body:
                       raise SystemExit("Could not find Android variables ext block")
-                  body = body.replace("ext {", "ext {\\n    rgcfaIncludeGoogle = true\\n    androidxCredentialsVersion = '1.3.0'", 1)
+                  body = body.replace("ext {", "ext {\n    rgcfaIncludeGoogle = true\n    androidxCredentialsVersion = '1.3.0'", 1)
                   variables.write_text(body)
           print("Firebase Android config copied and Gradle plugin configured.")
           PY
