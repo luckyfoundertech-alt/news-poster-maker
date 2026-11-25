@@ -133,7 +133,7 @@ export async function restoreCloudDesigns(uid: string) {
 export async function syncUploadCloud(uid: string, asset: Asset & { addedAt: number }) {
   if (!uid || !asset.id) return;
   const path = `users/${uid}/uploads/${asset.id}`;
-  await uploadBytes(ref(storage, path), new Blob([asset.bytes as BlobPart], { type: asset.mime }), { contentType: asset.mime || 'application/octet-stream' });
+  const assetBuffer = new ArrayBuffer(asset.bytes.byteLength);\n  new Uint8Array(assetBuffer).set(asset.bytes);\n  await uploadBytes(ref(storage, path), new Blob([assetBuffer], { type: asset.mime }), { contentType: asset.mime || 'application/octet-stream' });
   await setDoc(fsDoc(firestore, 'users', uid, 'uploads', asset.id), {
     id: asset.id, name: asset.name, mime: asset.mime, width: asset.width,
     height: asset.height, addedAt: asset.addedAt, path, syncedAt: serverTimestamp(),
