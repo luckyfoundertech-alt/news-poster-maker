@@ -131,80 +131,64 @@ export async function restoreCloudDesigns(uid: string) {
 """)
 
 (src / "auth/AuthGate.tsx").write_text("""import { useEffect, useState, type FormEvent, type ReactNode } from 'react';
-import { onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail, signOut, GoogleAuthProvider, signInWithPopup, signInWithCredential } from 'firebase/auth';
+import { onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail, signOut, GoogleAuthProvider, signInWithPopup, signInWithCredential, updateProfile } from 'firebase/auth';
 import { Capacitor } from '@capacitor/core';
 import { FirebaseAuthentication } from '@capacitor-firebase/authentication';
 import { auth, authReady } from './firebase';
 import { restoreCloudDesigns } from './cloud';
 
-function AuthScreen() {
-  const [mode, setMode] = useState<'login'|'signup'|'reset'>('login');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState('');
-  const [notice, setNotice] = useState('');
-  const submit = async (e: FormEvent) => {
-    e.preventDefault(); setBusy(true); setError(''); setNotice('');
-    try {
-      await authReady;
-      if (mode === 'signup') await createUserWithEmailAndPassword(auth, email.trim(), password);
-      else if (mode === 'reset') { await sendPasswordResetEmail(auth, email.trim()); setNotice('Password reset link email par bhej diya gaya hai.'); }
-      else await signInWithEmailAndPassword(auth, email.trim(), password);
-    } catch (e) { setError((e as Error).message || 'Authentication failed'); }
-    finally { setBusy(false); }
-  };
-  const google = async () => {
-    setBusy(true); setError('');
-    try {
-      await authReady;
-      if (Capacitor.isNativePlatform()) {
-        const result = await FirebaseAuthentication.signInWithGoogle();
-        const idToken = result.credential?.idToken;
-        if (!idToken) throw new Error('Google ID token nahi mila. Firebase Android SHA-1 aur OAuth client configure karein.');
-        await signInWithCredential(auth, GoogleAuthProvider.credential(idToken));
-      } else {
-        await signInWithPopup(auth, new GoogleAuthProvider());
-      }
-    } catch (e) { setError((e as Error).message || 'Google sign-in failed'); }
-    finally { setBusy(false); }
-  };
-  return <main style={{ minHeight:'100dvh', display:'grid', placeItems:'center', padding:20, background:'var(--paper)' }}>
-    <form onSubmit={submit} style={{ width:'min(100%,420px)', padding:28, border:'1px solid var(--line)', borderRadius:18, background:'var(--panel,white)', display:'grid', gap:14 }}>
-      <div><h1 style={{ margin:0 }}>NEWS Studio</h1><p className="muted">Sign in to save your designs and photos securely in your cloud.</p></div>
-      {mode !== 'reset' ? <button type="button" className="btn btn-outline" disabled={busy} onClick={google}>Continue with Google</button> : null}
-      {mode !== 'reset' ? <div className="muted" style={{textAlign:'center'}}>or continue with email</div> : null}
-      <label>Email<input required type="email" autoComplete="email" value={email} onChange={e=>setEmail(e.target.value)} /></label>
-      {mode !== 'reset' ? <label>Password<input required minLength={6} type="password" autoComplete={mode==='signup'?'new-password':'current-password'} value={password} onChange={e=>setPassword(e.target.value)} /></label> : null}
-      {error ? <p role="alert" style={{color:'#b42318',overflowWrap:'anywhere'}}>{error}</p> : null}
-      {notice ? <p role="status">{notice}</p> : null}
-      <button className="btn btn-primary" disabled={busy}>{busy ? 'Please wait…' : mode==='signup'?'Create account':mode==='reset'?'Send reset link':'Sign in'}</button>
-      <div style={{display:'flex',justifyContent:'space-between',gap:8,flexWrap:'wrap'}}>
-        <button type="button" className="text-link" onClick={()=>{setMode(mode==='signup'?'login':'signup');setError('');}}>{mode==='signup'?'Already have an account? Sign in':'Create account'}</button>
-        <button type="button" className="text-link" onClick={()=>{setMode(mode==='reset'?'login':'reset');setError('');}}>{mode==='reset'?'Back to sign in':'Forgot password?'}</button>
-      </div>
-    </form>
-  </main>;
+const LOGO = 'https://lh3.googleusercontent.com/aida-public/AB6AXuCmTmy3ETuD5atbGZG4-BP8X4yyDmE5Cd7G-Qu6bEWxcDhhKge-1zvwk3aAtl4tSF2R0kVPFkTFZYkRRvuKDgnXwKzr8jbo0KDpTD1GMZy5kq2Ib9fjBS79SpwcVeV1Id6uC3oJjxoUorjO4qS6vKIbyqw_JVqUiNA3kapyO_-oCdhEPjgQzU1O-VqMXv0Zh0qWk4RzsCFimnQ1Z6uacLqVxTf-8V51vxqtaoTmJTngDWcnyl7EnIDzMQ';
+const CSS = `
+.ns-auth{min-height:100dvh;background:#fff;color:#0f172a;font-family:'Plus Jakarta Sans',Inter,system-ui,sans-serif;display:flex;flex-direction:column;align-items:center;padding:env(safe-area-inset-top,8px) 20px env(safe-area-inset-bottom,12px);box-sizing:border-box}
+.ns-auth *{box-sizing:border-box}.ns-auth button,.ns-auth input{font:inherit}.ns-status{width:100%;max-width:420px;height:28px;display:flex;justify-content:space-between;align-items:center;font-size:12px;font-weight:700;color:#334155}
+.ns-wrap{width:100%;max-width:420px;display:flex;flex:1;flex-direction:column}.ns-brand{display:flex;flex-direction:column;align-items:center;text-align:center;margin:22px 0 22px}.ns-logo{width:82px;height:82px;border-radius:20px;padding:5px;background:#fff;border:1px solid #e2e8f0;box-shadow:0 4px 20px -4px #0f172a12;object-fit:cover}.ns-title{font-size:25px;font-weight:800;letter-spacing:-.7px;margin:14px 0 5px}.ns-sub{font-size:13px;line-height:1.55;color:#64748b;max-width:310px;margin:0}.ns-card{width:100%;background:#fff;border:1px solid #e2e8f0;border-radius:18px;padding:19px;box-shadow:0 4px 24px -4px #0f172a0f;display:flex;flex-direction:column;gap:14px}
+.ns-field{display:flex;flex-direction:column;gap:7px}.ns-field label{display:flex;justify-content:space-between;font-size:12px;font-weight:700;color:#334155}.ns-field input{width:100%;height:48px;border:1px solid #cbd5e1;border-radius:12px;background:#f8fafc;padding:0 13px;color:#0f172a;outline:none;font-size:14px}.ns-field input:focus{background:#fff;border-color:#2563eb;box-shadow:0 0 0 3px #2563eb18}.ns-pwd{display:flex;align-items:center;position:relative}.ns-pwd input{padding-right:48px}.ns-eye{position:absolute;right:5px;width:40px;height:40px;border:0;background:transparent;color:#64748b;font-size:18px}.ns-btn{width:100%;min-height:48px;border-radius:12px;border:1px solid #e2e8f0;background:#fff;color:#334155;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:9px;cursor:pointer}.ns-primary{background:#2563eb;color:#fff;border-color:#2563eb;box-shadow:0 2px 8px #2563eb30}.ns-btn:disabled{opacity:.6;cursor:wait}.ns-link{border:0;background:transparent;color:#2563eb;font-size:12px;font-weight:700;padding:7px 2px;cursor:pointer}.ns-divider{display:flex;align-items:center;gap:12px;color:#94a3b8;font-size:10px;font-weight:700;letter-spacing:1px}.ns-divider:before,.ns-divider:after{content:'';height:1px;background:#e2e8f0;flex:1}.ns-google svg{width:17px;height:17px}.ns-banner{margin-top:15px;padding:12px 14px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:13px;display:flex;align-items:center;gap:11px}.ns-banner-icon{width:34px;height:34px;border-radius:9px;background:#dbeafe;color:#2563eb;display:grid;place-items:center}.ns-footer{margin-top:auto;padding:22px 0 10px;text-align:center;font-size:12px;color:#64748b}.ns-error{padding:10px 12px;border-radius:10px;background:#fef2f2;border:1px solid #fecaca;color:#b91c1c;font-size:12px;line-height:1.5;overflow-wrap:anywhere}.ns-notice{padding:10px 12px;border-radius:10px;background:#ecfdf5;border:1px solid #a7f3d0;color:#047857;font-size:12px}.ns-check{display:flex;gap:8px;align-items:flex-start;font-size:12px;color:#475569;line-height:1.5}.ns-check input{accent-color:#2563eb;margin-top:2px}.ns-badges{display:flex;gap:7px;flex-wrap:wrap;justify-content:center;margin-top:16px}.ns-badge{border-radius:99px;padding:6px 10px;font-size:11px;font-weight:700;background:#eff6ff;color:#1d4ed8;border:1px solid #dbeafe}.ns-badge.red{background:#fef2f2;color:#dc2626;border-color:#fecaca}.ns-hero{background:#fff;border:1px solid #e2e8f0;border-radius:17px;padding:15px;margin:18px 0 0;box-shadow:0 2px 10px #0f172a08}.ns-hero h2{font-size:15px;margin:9px 0 7px}.ns-preview{background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:10px;display:flex;gap:10px;align-items:center}.ns-preview img{width:48px;height:48px;object-fit:cover;border-radius:8px}.ns-stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}.ns-stat{background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:12px;font-size:11px;color:#64748b}.ns-stat b{display:block;font-size:15px;color:#0f172a;margin-bottom:3px}.ns-actions{display:flex;flex-direction:column;gap:10px;margin-top:auto;padding-top:18px}.ns-back{align-self:flex-start;margin:4px 0 0}.ns-status-pill{display:inline-flex;gap:7px;align-items:center;background:#fef2f2;color:#dc2626;border:1px solid #fecaca;border-radius:99px;padding:5px 11px;font-size:10px;font-weight:800;letter-spacing:1px;margin-top:12px}
+@media(max-height:720px){.ns-brand{margin:10px 0 14px}.ns-logo{width:68px;height:68px}.ns-card{padding:15px;gap:11px}.ns-hero{margin-top:12px}}
+`;
+
+function GoogleMark(){return <svg viewBox='0 0 24 24' aria-hidden='true'><path fill='#4285F4' d='M23.5 12.2c0-.7-.06-1.4-.18-2.07H12v4.5h6.45a5.5 5.5 0 0 1-2.4 3.62v3h3.88c2.27-2.1 3.57-5.18 3.57-9.05z'/><path fill='#34A853' d='M12 24c3.2 0 5.9-1.06 7.9-2.88l-3.87-3c-1.08.72-2.45 1.14-4.03 1.14-3.1 0-5.73-2.08-6.67-4.9H1.33v3.08A12 12 0 0 0 12 24z'/><path fill='#FBBC05' d='M5.33 14.36a7.2 7.2 0 0 1 0-4.72V6.56H1.33a12 12 0 0 0 0 10.88z'/><path fill='#EA4335' d='M12 4.75c1.75 0 3.32.6 4.56 1.78l3.42-3.42A11.45 11.45 0 0 0 12 0 12 12 0 0 0 1.33 6.56l4 3.08C6.27 6.82 8.9 4.75 12 4.75z'/></svg>}
+
+function AuthScreen(){
+ const [page,setPage]=useState<'welcome'|'login'|'signup'|'reset'>('welcome');
+ const [email,setEmail]=useState(''),[password,setPassword]=useState(''),[name,setName]=useState(''),[confirm,setConfirm]=useState('');
+ const [showPwd,setShowPwd]=useState(false),[busy,setBusy]=useState(false),[error,setError]=useState(''),[notice,setNotice]=useState(''),[terms,setTerms]=useState(false);
+ const [remember,setRemember]=useState(true);
+ const message=(e:unknown)=>{const code=(e as {code?:string})?.code||'';const messages:Record<string,string>={'auth/invalid-email':'Email address sahi nahi hai.','auth/user-not-found':'Is email se account nahi mila. Pehle account create karein.','auth/wrong-password':'Password galat hai. Dobara check karein.','auth/invalid-credential':'Email ya password galat hai.','auth/email-already-in-use':'Is email se account pehle se bana hua hai. Sign in karein.','auth/weak-password':'Password kam se kam 8 characters ka rakhein.','auth/network-request-failed':'Internet connection check karke dobara try karein.','auth/too-many-requests':'Bahut attempts hue. Thodi der baad try karein.','auth/popup-closed-by-user':'Google sign-in cancel ho gaya.','auth/popup-blocked':'Google sign-in popup block hua. Dobara try karein.'};return messages[code]||((e as Error)?.message||'Kuch problem hui. Dobara try karein.');};
+ const runGoogle=async()=>{setBusy(true);setError('');setNotice('');try{await authReady;if(Capacitor.isNativePlatform()){const result=await FirebaseAuthentication.signInWithGoogle();const token=result.credential?.idToken;if(!token)throw new Error('Google ID token nahi mila. Firebase Android SHA-1 aur OAuth client verify karein.');await signInWithCredential(auth,GoogleAuthProvider.credential(token));}else await signInWithPopup(auth,new GoogleAuthProvider());}catch(e){setError(message(e));}finally{setBusy(false);}};
+ const submit=async(e:FormEvent)=>{e.preventDefault();setBusy(true);setError('');setNotice('');try{await authReady;if(page==='reset'){await sendPasswordResetEmail(auth,email.trim());setNotice('Password reset link aapke email par bhej diya gaya hai.');return;}if(page==='signup'){if(password.length<8)throw new Error('Password kam se kam 8 characters ka hona chahiye.');if(password!==confirm)throw new Error('Dono passwords match nahi kar rahe.');if(!terms)throw new Error('Account banane ke liye Terms accept karein.');const cred=await createUserWithEmailAndPassword(auth,email.trim(),password);if(name.trim())await updateProfile(cred.user,{displayName:name.trim()});}else await signInWithEmailAndPassword(auth,email.trim(),password);}catch(e){setError(message(e));}finally{setBusy(false);}};
+ const switchPage=(p:'welcome'|'login'|'signup'|'reset')=>{setPage(p);setError('');setNotice('');};
+ return <div className='ns-auth'><style>{CSS}</style><div className='ns-status'><span>NEWS Studio</span><span>● ● ●</span></div><div className='ns-wrap'>
+ {page==='welcome'?<>
+  <div className='ns-brand'><img className='ns-logo' src={LOGO} alt='NEWS Studio app icon'/><div className='ns-status-pill'>● CREATOR ACCESS</div><h1 className='ns-title'>NEWS <span style={{color:'#2563eb'}}>Studio</span></h1><p className='ns-sub'>Mobile editorial powerhouse for breaking news flyers, posters &amp; stories</p>
+   <div className='ns-badges'><span className='ns-badge'>✦ 337+ Layouts</span><span className='ns-badge red'>◉ Live Feeds</span><span className='ns-badge'>✓ 4K Export</span></div></div>
+  <div className='ns-hero'><div style={{display:'flex',justifyContent:'space-between',fontSize:11,fontWeight:800,color:'#64748b'}}><span>▣ EDITORIAL ENGINE</span><span style={{color:'#dc2626'}}>● LIVE</span></div><h2>Design Breaking News Posters in Seconds</h2><div className='ns-preview'><img src={LOGO} alt='NEWS Studio'/><div style={{minWidth:0}}><b style={{fontSize:13}}>Your next newsroom design starts here</b><div style={{fontSize:11,color:'#64748b',marginTop:4}}>Templates · Layers · Professional export</div></div></div><div className='ns-stats'><div className='ns-stat'><b>337+</b>Ready-made layouts</div><div className='ns-stat'><b>4K</b>High-resolution export</div></div></div>
+  <div className='ns-actions'><button className='ns-btn ns-primary' onClick={()=>switchPage('signup')}>Get Started / Create Account <span>→</span></button><button className='ns-btn' onClick={()=>switchPage('login')}>↪ I Already Have an Account</button><button className='ns-btn ns-google' disabled={busy} onClick={runGoogle}><GoogleMark/>Continue with Google</button></div>
+  <div className='ns-footer'>By continuing you accept our Terms of Service and Privacy Policy.</div>
+ </>:<>
+  <button className='ns-link ns-back' onClick={()=>switchPage('welcome')}>← Back</button>
+  <div className='ns-brand' style={{marginTop:12,marginBottom:18}}><img className='ns-logo' src={LOGO} alt='NEWS Studio'/><div className='ns-status-pill'>● CREATOR PORTAL</div><h1 className='ns-title'>{page==='signup'?'Create Studio Account':page==='reset'?'Reset Password':'Welcome Back, Creator'}</h1><p className='ns-sub'>{page==='signup'?'Create your account to save designs and access your studio anywhere.':page==='reset'?'We will email you a secure password reset link.':'Sign in to access your news posters, live layer stacks & creative workspace.'}</p></div>
+  <form className='ns-card' onSubmit={submit}>
+   {page==='signup'?<div className='ns-field'><label>Full Name <span>CREATOR PROFILE</span></label><input value={name} onChange={e=>setName(e.target.value)} placeholder='Your full name' autoComplete='name' required/></div>:null}
+   <div className='ns-field'><label>Work or Creator Email <span style={{color:'#2563eb'}}>STUDIO ID</span></label><input type='email' value={email} onChange={e=>setEmail(e.target.value)} placeholder='editor@pressroom.news' autoComplete='email' required/></div>
+   {page!=='reset'?<><div className='ns-field'><label>Password <span style={{color:'#94a3b8'}}>MIN 8 CHARS</span></label><div className='ns-pwd'><input type={showPwd?'text':'password'} value={password} onChange={e=>setPassword(e.target.value)} placeholder='Enter studio password' autoComplete={page==='signup'?'new-password':'current-password'} minLength={8} required/><button className='ns-eye' type='button' onClick={()=>setShowPwd(!showPwd)} aria-label='Toggle password visibility'>{showPwd?'◉':'◎'}</button></div></div>
+   {page==='signup'?<div className='ns-field'><label>Confirm Password</label><input type={showPwd?'text':'password'} value={confirm} onChange={e=>setConfirm(e.target.value)} placeholder='Re-enter password' autoComplete='new-password' required/></div>:<div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}><label className='ns-check'><input type='checkbox' checked={remember} onChange={e=>setRemember(e.target.checked)}/>Remember device</label><button type='button' className='ns-link' onClick={()=>switchPage('reset')}>Forgot Password?</button></div>}</>:null}
+   {page==='signup'?<label className='ns-check'><input type='checkbox' checked={terms} onChange={e=>setTerms(e.target.checked)}/>I agree to the Studio Terms of Service and Privacy Policy.</label>:null}
+   {error?<div className='ns-error' role='alert'>{error}</div>:null}{notice?<div className='ns-notice' role='status'>{notice}</div>:null}
+   <button className='ns-btn ns-primary' disabled={busy}>{busy?'Please wait…':page==='signup'?'Create Studio Account':page==='reset'?'Send Reset Link':'Sign In to Studio'} <span>→</span></button>
+   {page!=='reset'?<><div className='ns-divider'>OR CONTINUE WITH</div><button type='button' className='ns-btn ns-google' disabled={busy} onClick={runGoogle}><GoogleMark/>{page==='signup'?'Sign up with Google':'Continue with Google'}</button></>:null}
+  </form>
+  <div className='ns-banner'><div className='ns-banner-icon'>▣</div><div><b style={{display:'block',fontSize:12,color:'#1e293b'}}>337+ Live Templates Ready</b><span style={{fontSize:11,color:'#64748b'}}>Breaking banners, reels &amp; editorial tiles</span></div></div>
+  <div className='ns-footer'>{page==='signup'?<>Already have an account? <button className='ns-link' onClick={()=>switchPage('login')}>Sign In</button></>:page==='reset'?<button className='ns-link' onClick={()=>switchPage('login')}>Back to Sign In</button>:<>Don't have a studio account? <button className='ns-link' onClick={()=>switchPage('signup')}>Create account</button></>}</div>
+ </>}
+ </div></div>;
 }
 
 export function AuthGate({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState(auth.currentUser);
-  const [ready, setReady] = useState(false);
-  useEffect(() => {
-    let live = true;
-    const unsub = onAuthStateChanged(auth, async current => {
-      if (!live) return;
-      setUser(current);
-      if (current) {
-        try { await restoreCloudDesigns(current.uid); } catch (e) { console.error('Cloud restore failed', e); }
-      }
-      if (live) setReady(true);
-    });
-    return () => { live = false; unsub(); };
-  }, []);
-  if (!user) return <AuthScreen />;
-  if (!ready) return <div style={{minHeight:'100dvh',display:'grid',placeItems:'center'}}>Restoring your cloud designs…</div>;
-  return <>{children}<button onClick={()=>signOut(auth)} title="Sign out" style={{position:'fixed',right:12,bottom:12,zIndex:10000}} className="btn btn-outline">Sign out · {user.email || 'Google account'}</button></>;
+ const [user,setUser]=useState(auth.currentUser),[ready,setReady]=useState(false);
+ useEffect(()=>{let live=true;const unsub=onAuthStateChanged(auth,async current=>{if(!live)return;setUser(current);if(current){setReady(false);try{await restoreCloudDesigns(current.uid);}catch(e){console.error('Cloud restore failed',e);}if(live)setReady(true);}else if(live)setReady(true);});return()=>{live=false;unsub();};},[]);
+ if(!user)return <AuthScreen/>;
+ if(!ready)return <div style={{minHeight:'100dvh',display:'grid',placeItems:'center',background:'#fff',color:'#0f172a',fontFamily:'system-ui'}}>Restoring your cloud designs…</div>;
+ return <>{children}<button onClick={()=>signOut(auth)} title='Sign out' className='btn btn-outline' style={{position:'fixed',right:12,bottom:12,zIndex:10000}}>Sign out · {user.displayName||user.email||'Google account'}</button></>;
 }
 """)
 
