@@ -180,8 +180,8 @@ jobs:
           """)
           home = Path("apps/editor/src/home/Home.tsx")
           body = home.read_text()
-          body = body.replace("import './home.css';", "import { NewsFeed } from './NewsFeed';\\nimport './home.css';")
-          body, inserted = body.replace("<main>\\n        <section className=\"home-section\" id=\"your-designs\">", "<main>\\n        <NewsFeed />\\n        <section className=\"home-section\" id=\"your-designs\">", 1), 1
+          body = body.replace("import './home.css';", "import { NewsFeed } from './NewsFeed';\nimport './home.css';")
+          body, inserted = body.replace("<main>\n        <section className=\"home-section\" id=\"your-designs\">", "<main>\n        <NewsFeed />\n        <section className=\"home-section\" id=\"your-designs\">", 1), 1
           if "NewsFeed" not in body:
               raise SystemExit("RSS news panel insertion failed")
           home.write_text(body)
@@ -190,7 +190,7 @@ jobs:
           app = Path("apps/editor/src/App.tsx")
           body = app.read_text()
           body = body.replace("import { createDesign } from './io/designs';", "import { createDesign, openDesign } from './io/designs';")
-          body = body.replace("import { formatById } from './doc/formats';", "import { formatById } from './doc/formats';\\nimport { makeText, makeImage, TEXT_PRESETS } from './doc/factory';\\nimport { prepareImage } from './io/upload';")
+          body = body.replace("import { formatById } from './doc/formats';", "import { formatById } from './doc/formats';\nimport { makeText, makeImage, TEXT_PRESETS } from './doc/factory';\nimport { prepareImage } from './io/upload';")
           needle = "      window.location.replace(\x60#/d/\x24{id}\x60);"
           fill = """      const headline = q.get('headline')?.trim();
                 if (headline) {
