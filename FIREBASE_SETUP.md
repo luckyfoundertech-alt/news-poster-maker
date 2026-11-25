@@ -9,7 +9,7 @@ Firebase Android App ID: `1:519573612826:android:8568296d317fa86bcfa4a3`
 Add this SHA-1 under Firebase Console → Project settings → Your apps → Android app → SHA certificate fingerprints:
 
 ```
-1B:0A:A7:8E:1F:84:1A:27:DE:70:80:D6:92:4E:89:07:6C:C3:FA:71
+C8:F6:57:C2:ED:17:4F:E4:CA:63:1C:1A:B3:4D:CB:D2:BE:91:17:18
 ```
 
 Then download the refreshed `google-services.json` and replace the repository root file. This is the GitHub Actions debug signing fingerprint; a Play Store release keystore will have a different fingerprint.
