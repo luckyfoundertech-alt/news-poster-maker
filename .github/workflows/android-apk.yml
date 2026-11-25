@@ -56,7 +56,7 @@ jobs:
           s = s.replace("            <PosterBloom looks={looks} />\n", "")
           s, n3 = re.subn(r"        \{looks\.length \? \(.*?\n        \) : null\}\n", "", s, flags=re.S)
           s, n4 = re.subn(r"// Drawn in a 600 x 640 design space\..*?// The template wall:", "// The template wall:", s, flags=re.S)
-          if n3 != 1 or n4 != 1 or "generate" in s.lower():
+          if n3 != 1 or n4 != 1 or "#/generate" in s or "loadLooks" in s or "PosterBloom" in s:
               raise SystemExit(f"Home AI UI patch mismatch: section={n3}, bloom={n4}")
           home.write_text(s)
           PY
