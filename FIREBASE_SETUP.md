@@ -39,8 +39,8 @@ Do not deploy permissive test-mode rules.
 
 ## Cloud-save data model
 
-- Firestore: `users/{uid}/designs/{designId}` metadata and Storage object paths.
-- Firebase Storage: Yjs design state, including embedded image/SVG assets, plus video/audio media blobs.
+- Firestore: `users/{uid}/designs/{designId}` design metadata and `users/{uid}/uploads/{uploadId}` Uploads-library metadata.
+- Firebase Storage: Yjs design state, including embedded image/SVG assets; video/audio media blobs; and standalone Uploads-library image assets.
 - Device IndexedDB: local editing cache and generated thumbnails.
 
 Each signed-in user can read/write only their own `users/{uid}/designs/**` data under the supplied rules. Cloud sync requires the Firestore and Storage products to be enabled and the rules above to be published.
