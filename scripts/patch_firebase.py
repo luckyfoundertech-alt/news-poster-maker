@@ -85,6 +85,20 @@ export async function restoreCloudDesigns(uid: string) {
     await persistence.destroy();
     design.destroy();
   }
+  // Back up designs that were created locally before the user registered.
+  const locals = await db.all<DesignEntry>('designs');
+  for (const item of locals) {
+    const remote = remoteById.get(item.value.id) as { updatedAt?: number } | undefined;
+    if (remote && (remote.updatedAt ?? 0) >= item.value.updatedAt) continue;
+    const ydoc = new Y.Doc();
+    const persistence = new IndexeddbPersistence(localName(item.value.id), ydoc);
+    await persistence.whenSynced;
+    const { DesignDoc } = await import('../doc/design');
+    const design = new DesignDoc(ydoc);
+    await syncDesignCloud(uid, design).catch((e) => console.error('Initial cloud backup failed', e));
+    await persistence.destroy();
+    design.destroy();
+  }
   window.dispatchEvent(new Event('news-cloud-restored'));
 }
 """)
