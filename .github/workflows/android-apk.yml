@@ -317,6 +317,8 @@ jobs:
           # Keep the full audit report, but do not suppress the APK build when advisories remain.
           npm audit --json > security-reports/npm-audit.json || true
           npm audit --audit-level=high || echo "::warning::High-severity dependency advisories remain; see NEWS-Studio-Security-Audit artifact."
+          npm run typecheck -w @opentempl/editor
+          npm test -w @opentempl/editor
           npm run build -w @opentempl/editor
       - name: Package editor as NEWS Android app
         run: |
