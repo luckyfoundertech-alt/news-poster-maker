@@ -60,6 +60,24 @@ jobs:
               raise SystemExit(f"Home AI UI patch mismatch: section={n3}, bloom={n4}")
           home.write_text(s)
 
+          # Remove the upstream AI generation implementation and model runtime entirely.
+          import json, shutil
+          editor_pkg = Path("apps/editor/package.json")
+          pkg = json.loads(editor_pkg.read_text())
+          pkg.get("dependencies", {}).pop("@huggingface/transformers", None)
+          editor_pkg.write_text(json.dumps(pkg, indent=2) + "\\n")
+          generation_dir = Path("apps/editor/src/generate")
+          if generation_dir.exists():
+              shutil.rmtree(generation_dir)
+          remaining = []
+          for source in Path("apps/editor/src").rglob("*"):
+              if source.is_file() and source.suffix in {".ts", ".tsx", ".js", ".jsx"}:
+                  body = source.read_text(errors="ignore")
+                  if "from '../generate/" in body or 'from "./generate/' in body:
+                      remaining.append(str(source))
+          if remaining:
+              raise SystemExit("AI generation imports remain: " + ", ".join(remaining))
+
           # Use Android's native file/share APIs for exports inside the Capacitor WebView.
           exp = Path("apps/editor/src/export/exporters.ts")
           s = exp.read_text()
