@@ -379,7 +379,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: NEWS-Studio-Security-Audit
-          path: security-reports/
+          path: opentempl/security-reports/
           if-no-files-found: warn
           retention-days: 30
       - name: Upload APK
