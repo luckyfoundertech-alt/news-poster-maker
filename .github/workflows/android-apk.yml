@@ -32,6 +32,34 @@ jobs:
         with:
           distribution: temurin
           java-version: '21'
+      - name: Remove AI generation UI from NEWS build
+        working-directory: opentempl
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          app = Path("apps/editor/src/App.tsx")
+          s = app.read_text()
+          s, n1 = re.subn(r"^const Studio = lazy\(.*?\);\n\n", "", s, flags=re.M)
+          s, n2 = re.subn(r"  if \(path\.startsWith\('/generate'\)\).*?\n  if \(path\.startsWith\('/open/'\)\)", "  if (path.startsWith('/open/'))", s, flags=re.S)
+          if n1 != 1 or n2 != 1:
+              raise SystemExit(f"App AI route patch mismatch: {n1}, {n2}")
+          app.write_text(s)
+          home = Path("apps/editor/src/home/Home.tsx")
+          s = home.read_text()
+          s = s.replace("import { loadLooks, sampleUrl, type Look } from '../generate/looks';\n", "")
+          s = s.replace("  const [looks, setLooks] = useState<Look[]>([]);\n", "")
+          s = s.replace("    loadLooks().then(setLooks);\n", "")
+          s = s.replace("    document.title = 'OpenTempl';", "    document.title = 'NEWS Studio';")
+          s = s.replace('          <a href="#/generate">Generate</a>\n', "")
+          s = s.replace('            <a href="#/generate">Generate</a>\n', "")
+          s = s.replace("            <PosterBloom looks={looks} />\n", "")
+          s, n3 = re.subn(r"        \{looks\.length \? \(.*?\n        \) : null\}\n", "", s, flags=re.S)
+          s, n4 = re.subn(r"// Drawn in a 600 x 640 design space\..*?// The template wall:", "// The template wall:", s, flags=re.S)
+          if n3 != 1 or n4 != 1 or "generate" in s.lower():
+              raise SystemExit(f"Home AI UI patch mismatch: section={n3}, bloom={n4}")
+          home.write_text(s)
+          PY
       - name: Build full OpenTempl editor and template library
         working-directory: opentempl
         run: |
