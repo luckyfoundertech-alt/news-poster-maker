@@ -59,7 +59,7 @@ jobs:
           if n3 != 1 or n4 != 1 or "#/generate" in s or "loadLooks" in s or "PosterBloom" in s:
               raise SystemExit(f"Home AI UI patch mismatch: section={n3}, bloom={n4}")
           home.write_text(s)
-
+          
           # Remove the upstream AI generation implementation and model runtime entirely.
           import json, shutil
           editor_pkg = Path("apps/editor/package.json")
@@ -98,86 +98,86 @@ jobs:
                       ai_refs.append(str(source))
           if ai_refs:
               raise SystemExit("AI implementation references remain: " + ", ".join(ai_refs))
-
+          
           # Add a deterministic RSS newsroom: no AI, article fields are mapped directly into editable text/image layers.
           news = Path("apps/editor/src/home/NewsFeed.tsx")
           news.write_text("""import { useEffect, useState } from 'react';
-import { navigate } from '../App';
-
-type FeedItem = { title: string; description?: string; link?: string; pubDate?: string; author?: string; thumbnail?: string; enclosure?: { link?: string } };
-type NewsItem = { title: string; summary: string; source: string; date: string; link: string; image: string };
-const FEEDS = [
-  { name: 'India — English', url: 'https://news.google.com/rss?hl=en-IN&gl=IN&ceid=IN:en' },
-  { name: 'India — Hindi', url: 'https://news.google.com/rss?hl=hi&gl=IN&ceid=IN:hi' },
-  { name: 'BBC Hindi', url: 'https://feeds.bbci.co.uk/hindi/rss.xml' },
-  { name: 'BBC World', url: 'https://feeds.bbci.co.uk/news/world/rss.xml' },
-];
-function clean(value: string) {
-  const node = document.createElement('div');
-  node.innerHTML = value || '';
-  return (node.textContent || '').replace(/\\s+/g, ' ').trim();
-}
-export function NewsFeed() {
-  const [feed, setFeed] = useState(FEEDS[0].url);
-  const [items, setItems] = useState<NewsItem[]>([]);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState('');
-  const [loaded, setLoaded] = useState(false);
-  const load = async () => {
-    setBusy(true); setError('');
-    try {
-      const endpoint = 'https://api.rss2json.com/v1/api.json?rss_url=' + encodeURIComponent(feed);
-      const response = await fetch(endpoint);
-      if (!response.ok) throw new Error('News feed service returned HTTP ' + response.status);
-      const data = await response.json();
-      if (data.status !== 'ok' || !Array.isArray(data.items)) throw new Error(data.message || 'Could not read this RSS feed');
-      const source = clean(data.feed?.title || FEEDS.find((f) => f.url === feed)?.name || 'News');
-      setItems(data.items.slice(0, 20).map((item: FeedItem) => ({
-        title: clean(item.title || 'Untitled news'),
-        summary: clean(item.description || '').slice(0, 260),
-        source: clean(item.author || source),
-        date: item.pubDate || '',
-        link: item.link || '',
-        image: item.thumbnail || item.enclosure?.link || '',
-      })));
-      setLoaded(true);
-    } catch (e) {
-      setError((e as Error).message || 'News feed unavailable');
-    } finally { setBusy(false); }
-  };
-  useEffect(() => { load(); }, [feed]);
-  const makePoster = (item: NewsItem) => {
-    const q = new URLSearchParams({ format: 'a3-poster', headline: item.title, summary: item.summary, source: item.source, date: item.date, image: item.image });
-    navigate('/new?' + q.toString());
-  };
-  return <section className="home-section" style={{ border: '1px solid var(--line)', borderRadius: 18, padding: 18, marginBottom: 28 }}>
-    <div className="home-section-head">
-      <div><h2>Latest news</h2><p className="muted">RSS headlines. Create editable posters using the original article details — no AI.</p></div>
-      <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-        <select aria-label="News source" value={feed} onChange={(e) => setFeed(e.target.value)} style={{ maxWidth: 190 }}>
+          import { navigate } from '../App';
+          
+          type FeedItem = { title: string; description?: string; link?: string; pubDate?: string; author?: string; thumbnail?: string; enclosure?: { link?: string } };
+          type NewsItem = { title: string; summary: string; source: string; date: string; link: string; image: string };
+          const FEEDS = [
+            { name: 'India — English', url: 'https://news.google.com/rss?hl=en-IN&gl=IN&ceid=IN:en' },
+            { name: 'India — Hindi', url: 'https://news.google.com/rss?hl=hi&gl=IN&ceid=IN:hi' },
+            { name: 'BBC Hindi', url: 'https://feeds.bbci.co.uk/hindi/rss.xml' },
+            { name: 'BBC World', url: 'https://feeds.bbci.co.uk/news/world/rss.xml' },
+          ];
+          function clean(value: string) {
+            const node = document.createElement('div');
+            node.innerHTML = value || '';
+            return (node.textContent || '').replace(/\\s+/g, ' ').trim();
+          }
+          export function NewsFeed() {
+            const [feed, setFeed] = useState(FEEDS[0].url);
+            const [items, setItems] = useState<NewsItem[]>([]);
+            const [busy, setBusy] = useState(false);
+            const [error, setError] = useState('');
+            const [loaded, setLoaded] = useState(false);
+            const load = async () => {
+              setBusy(true); setError('');
+              try {
+                const endpoint = 'https://api.rss2json.com/v1/api.json?rss_url=' + encodeURIComponent(feed);
+                const response = await fetch(endpoint);
+                if (!response.ok) throw new Error('News feed service returned HTTP ' + response.status);
+                const data = await response.json();
+                if (data.status !== 'ok' || !Array.isArray(data.items)) throw new Error(data.message || 'Could not read this RSS feed');
+                const source = clean(data.feed?.title || FEEDS.find((f) => f.url === feed)?.name || 'News');
+                setItems(data.items.slice(0, 20).map((item: FeedItem) => ({
+                  title: clean(item.title || 'Untitled news'),
+                  summary: clean(item.description || '').slice(0, 260),
+                  source: clean(item.author || source),
+                  date: item.pubDate || '',
+                  link: item.link || '',
+                  image: item.thumbnail || item.enclosure?.link || '',
+                })));
+                setLoaded(true);
+              } catch (e) {
+                setError((e as Error).message || 'News feed unavailable');
+              } finally { setBusy(false); }
+            };
+            useEffect(() => { load(); }, [feed]);
+            const makePoster = (item: NewsItem) => {
+              const q = new URLSearchParams({ format: 'a3-poster', headline: item.title, summary: item.summary, source: item.source, date: item.date, image: item.image });
+              navigate('/new?' + q.toString());
+            };
+            return <section className="home-section" style={{ border: '1px solid var(--line)', borderRadius: 18, padding: 18, marginBottom: 28 }}>
+              <div className="home-section-head">
+                <div><h2>Latest news</h2><p className="muted">RSS headlines. Create editable posters using the original article details — no AI.</p></div>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                  <select aria-label="News source" value={feed} onChange={(e) => setFeed(e.target.value)} style={{ maxWidth: 190 }}>
           {FEEDS.map((f) => <option key={f.url} value={f.url}>{f.name}</option>)}
-        </select>
-        <button className="btn btn-outline" onClick={load} disabled={busy}>{busy ? 'Refreshing…' : 'Refresh'}</button>
-      </div>
-    </div>
-    {error ? <p role="alert" className="muted">{error} — Check your internet connection and refresh.</p> : null}
-    {busy && !items.length ? <p className="muted">Loading headlines…</p> : null}
-    {loaded && !items.length && !error ? <p className="muted">No stories found in this feed.</p> : null}
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(min(100%,260px),1fr))', gap: 12 }}>
-      {items.map((item, i) => <article key={item.link || item.title + i} style={{ border: '1px solid var(--line)', borderRadius: 12, padding: 12, minWidth: 0 }}>
-        {item.image ? <img src={item.image} alt="" loading="lazy" style={{ width: '100%', height: 130, objectFit: 'cover', borderRadius: 8, marginBottom: 8 }} /> : null}
-        <h3 style={{ fontSize: 16, lineHeight: 1.35, margin: '4px 0 8px' }}>{item.title}</h3>
-        {item.summary ? <p className="muted" style={{ fontSize: 13, lineHeight: 1.45 }}>{item.summary}</p> : null}
-        <p className="muted" style={{ fontSize: 11 }}>{item.source}{item.date ? ' · ' + new Date(item.date).toLocaleString() : ''}</p>
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  </select>
+                  <button className="btn btn-outline" onClick={load} disabled={busy}>{busy ? 'Refreshing…' : 'Refresh'}</button>
+                </div>
+              </div>
+              {error ? <p role="alert" className="muted">{error} — Check your internet connection and refresh.</p> : null}
+              {busy && !items.length ? <p className="muted">Loading headlines…</p> : null}
+              {loaded && !items.length && !error ? <p className="muted">No stories found in this feed.</p> : null}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(min(100%,260px),1fr))', gap: 12 }}>
+                {items.map((item, i) => <article key={item.link || item.title + i} style={{ border: '1px solid var(--line)', borderRadius: 12, padding: 12, minWidth: 0 }}>
+                  {item.image ? <img src={item.image} alt="" loading="lazy" style={{ width: '100%', height: 130, objectFit: 'cover', borderRadius: 8, marginBottom: 8 }} /> : null}
+                  <h3 style={{ fontSize: 16, lineHeight: 1.35, margin: '4px 0 8px' }}>{item.title}</h3>
+                  {item.summary ? <p className="muted" style={{ fontSize: 13, lineHeight: 1.45 }}>{item.summary}</p> : null}
+                  <p className="muted" style={{ fontSize: 11 }}>{item.source}{item.date ? ' · ' + new Date(item.date).toLocaleString() : ''}</p>
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           <button className="btn btn-primary" onClick={() => makePoster(item)}>Create poster</button>
           {item.link ? <a className="text-link" href={item.link} target="_blank" rel="noreferrer">Read source</a> : null}
-        </div>
-      </article>)}
-    </div>
-  </section>;
-}
-""")
+                  </div>
+                </article>)}
+              </div>
+            </section>;
+          }
+          """)
           home = Path("apps/editor/src/home/Home.tsx")
           body = home.read_text()
           body = body.replace("import './home.css';", "import { NewsFeed } from './NewsFeed';\\nimport './home.css';")
@@ -185,7 +185,7 @@ export function NewsFeed() {
           if "NewsFeed" not in body:
               raise SystemExit("RSS news panel insertion failed")
           home.write_text(body)
-
+          
           # Deterministically populate an editable A3 poster from RSS fields.
           app = Path("apps/editor/src/App.tsx")
           body = app.read_text()
@@ -193,9 +193,9 @@ export function NewsFeed() {
           body = body.replace("import { formatById } from './doc/formats';", "import { formatById } from './doc/formats';\\nimport { makeText, makeImage, TEXT_PRESETS } from './doc/factory';\\nimport { prepareImage } from './io/upload';")
           needle = "      window.location.replace(\x60#/d/\x24{id}\x60);"
           fill = """      const headline = q.get('headline')?.trim();
-      if (headline) {
-        const opened = await openDesign(id);
-        if (opened) {
+                if (headline) {
+                  const opened = await openDesign(id);
+                  if (opened) {
           const snap = opened.doc.snapshot;
           const pageId = snap.pageOrder[0];
           const width = snap.meta.width;
@@ -219,14 +219,14 @@ export function NewsFeed() {
           const byline = [source, date].filter(Boolean).join(' · ');
           if (byline) opened.doc.addElement(pageId, makeText({ ...TEXT_PRESETS.body, text: byline, x: 76, y: height - 120, w: width - 152, h: 54, fontSize: 22, color: '#6B7280' }));
           await opened.close();
-        }
-      }
-      window.location.replace(\x60#/d/\x24{id}\x60);"""
+                  }
+                }
+                window.location.replace(\x60#/d/\x24{id}\x60);"""
           if needle not in body:
               raise SystemExit("NewDesign redirect insertion point missing")
           body = body.replace(needle, fill, 1)
           app.write_text(body)
-
+          
           # Use Android's native file/share APIs for exports inside the Capacitor WebView.
           exp = Path("apps/editor/src/export/exporters.ts")
           s = exp.read_text()
