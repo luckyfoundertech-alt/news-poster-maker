@@ -80,6 +80,12 @@ jobs:
           if magic_count != 1:
               raise SystemExit(f"AI photo tools removal mismatch: {magic_count}")
           adjust.write_text(body)
+          start = Path("apps/editor/src/start/Start.tsx")
+          body = start.read_text()
+          body, removed = re.subn(r"  \\{ icon: 'wand', name: 'Remove background'.*?\\n", "", body)
+          if removed != 1:
+              raise SystemExit(f"AI background-removal feature card mismatch: {removed}")
+          start.write_text(body)
           for path in ["apps/editor/src/tools/magicLayers.ts", "apps/editor/src/tools/removeBackground.ts"]:
               Path(path).unlink(missing_ok=True)
           ai_refs = []
