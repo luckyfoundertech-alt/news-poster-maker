@@ -40,6 +40,11 @@ jobs:
         with:
           distribution: temurin
           java-version: '21'
+      - name: Restore stable CI debug keystore for repeatable Google Sign-In SHA-1
+        uses: actions/cache@v4
+        with:
+          path: ~/.android/debug.keystore
+          key: news-studio-debug-keystore-v1
       - name: Remove AI generation UI from NEWS build
         working-directory: opentempl
         run: |
