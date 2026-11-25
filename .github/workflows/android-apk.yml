@@ -58,6 +58,11 @@ jobs:
           if n1 != 1 or n2 != 1:
               raise SystemExit(f"App AI route patch mismatch: {n1}, {n2}")
           app.write_text(s)
+          # These upstream tests exercise the AI generator intentionally removed from NEWS Studio.
+          for test_file in ("test/chatgpt-prompt.test.ts", "test/generate.test.ts"):
+              path = Path("apps/editor") / test_file
+              if path.exists():
+                  path.unlink()
           home = Path("apps/editor/src/home/Home.tsx")
           s = home.read_text()
           s = s.replace("import { loadLooks, sampleUrl, type Look } from '../generate/looks';\n", "")
