@@ -12,7 +12,7 @@ Add this SHA-1 under Firebase Console → Project settings → Your apps → And
 C8:F6:57:C2:ED:17:4F:E4:CA:63:1C:1A:B3:4D:CB:D2:BE:91:17:18
 ```
 
-Then download the refreshed `google-services.json` and replace the repository root file. This is the GitHub Actions debug signing fingerprint; a Play Store release keystore will have a different fingerprint.
+Then download the refreshed `google-services.json` and replace the repository root file. The currently committed JSON has an empty `oauth_client` list, so native Google Sign-In is not ready until Firebase generates the OAuth client and the refreshed file is committed. This is the GitHub Actions debug signing fingerprint; a Play Store release keystore will have a different fingerprint.
 
 ## Enable Google provider
 
@@ -22,7 +22,7 @@ Firebase Console → Authentication → Sign-in method → Google → Enable →
 
 Copy the repository `firestore.rules` contents into Firebase Console → Firestore Database → Rules, then Publish.
 
-Copy the repository `storage.rules` contents into Firebase Console → Storage → Rules, then Publish.
+Copy the repository `storage.rules` contents into Firebase Console → Storage → Rules, then Publish. Or, after Firebase CLI login, run `firebase deploy --only firestore:rules,storage` from the repository root (the project and rules config are included).
 
 These rules restrict each user's design documents and uploaded design/media files to the matching authenticated UID.
 
