@@ -9,7 +9,7 @@ Firebase Android App ID: `1:519573612826:android:8568296d317fa86bcfa4a3`
 Use the exact SHA-1 printed by the **Print Android debug signing SHA-1 for Firebase Google Sign-In setup** step in the latest successful Android build:
 
 ```
-Read the SHA-1 from the latest successful GitHub Actions run.
+78:AD:52:57:FB:A5:79:98:F7:37:1E:FE:14:BD:C3:E2:58:2D:39:A2 (Build #55, 25 Nov 2026). Re-check the latest run if the CI keystore cache is ever reset.
 ```
 
 The workflow now caches its CI debug keystore under a fixed cache key so the debug certificate fingerprint remains stable across subsequent builds. The previously recorded fingerprint `2D:15:5C:76:48:D0:D3:12:14:C8:71:2F:86:66:3D:E5:3A:E8:AE:92` came from an earlier runner and should not be assumed to match the warmed cache.
