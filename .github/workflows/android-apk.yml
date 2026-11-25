@@ -112,7 +112,7 @@ jobs:
           if old_download not in s:
               raise SystemExit("Native export patch: download function not found")
           s = s.replace(old_download, new_download, 1)
-          s, calls = re.subn(r"(?<!function )\\bdownload\\(", "await download(", s)
+          s, calls = re.subn(r"(?<!function )\bdownload\(", "await download(", s)
           if calls < 8:
               raise SystemExit(f"Native export patch: expected export call sites, found {calls}")
           exp.write_text(s)
