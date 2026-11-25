@@ -86,6 +86,12 @@ jobs:
           body = home.read_text()
           body = body.replace("import { Credit, GitHubLink, SHOW_SOURCE } from '../ui/Credit';", "")
           body = body.replace("import { REPO_URL } from '../links';", "")
+          body = body.replace("import { Subscribe } from '../ui/Subscribe';", "")
+          body = body.replace("import { SHOW_USAGE_FROM, useUsage } from '../stats/client';", "")
+          body = body.replace("  const usage = useUsage();\n", "")
+          body = re.sub(r"\s*\{usage && usage\.installs30d >= SHOW_USAGE_FROM \? .*? : null\}", "", body)
+          body = re.sub(r"\s*<div className=\"home-foot-sub\">\s*<Subscribe source=\"footer\" />\s*</div>", "", body)
+          body = body.replace("Free and open source. Everything you make stays on this computer.", "Your designs, templates and tools in one mobile studio.")
           body = body.replace("const DESKTOP_LINK = !window.tavlaDesktop;", "const DESKTOP_LINK = false;")
           body = body.replace("          <GitHubLink />\n", "")
           body = re.sub(r"\s*<a href=\"/download\">Desktop app</a>", "", body)
@@ -109,6 +115,8 @@ jobs:
           body = body.replace("document.title = 'Start a design · OpenTempl';", "document.title = 'Start a design · NEWS Studio';")
           body = re.sub(r"\s*<GitHubLink.*?/>", "", body)
           body = re.sub(r"\s*<Credit.*?/>", "", body)
+          body = body.replace("import { Subscribe } from '../ui/Subscribe';", "")
+          body = re.sub(r"\s*<Subscribe.*?/>", "", body)
           start.write_text(body)
 
           # Android safe-area, touch-target and narrow-screen layout improvements.
