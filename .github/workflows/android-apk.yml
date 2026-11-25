@@ -307,7 +307,7 @@ jobs:
             '@grpc/grpc-js': '1.14.7',
             'minimatch': '11.0.3'
           };
-          fs.writeFileSync(path, JSON.stringify(pkg, null, 2) + '\\n');
+          fs.writeFileSync(path, JSON.stringify(pkg, null, 2) + '\n');
           NODE
           npm install --no-fund
           npm install -w @opentempl/editor @capacitor/core@^7.1.0 @capacitor/filesystem@^7.1.4 @capacitor/share@^7.0.2 firebase@^12.6.0 @capacitor-firebase/authentication@^7.2.0 --no-fund
