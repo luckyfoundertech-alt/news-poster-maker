@@ -35,6 +35,7 @@ import { IndexeddbPersistence } from 'y-indexeddb';
 import { collection, deleteDoc, doc as fsDoc, getDoc, getDocs, serverTimestamp, setDoc } from 'firebase/firestore';
 import { deleteObject, getBytes, ref, uploadBytes } from 'firebase/storage';
 import type { DesignDoc } from '../doc/design';
+import type { Asset } from '../doc/types';
 import type { DesignEntry } from '../io/designs';
 import { db } from '../io/db';
 import { firestore, storage } from './firebase';
@@ -128,6 +129,48 @@ export async function restoreCloudDesigns(uid: string) {
   }
   window.dispatchEvent(new Event('news-cloud-restored'));
 }
+
+export async function syncUploadCloud(uid: string, asset: Asset & { addedAt: number }) {
+  if (!uid || !asset.id) return;
+  const path = `users/${uid}/uploads/${asset.id}`;
+  await uploadBytes(ref(storage, path), new Blob([asset.bytes as BlobPart], { type: asset.mime }), { contentType: asset.mime || 'application/octet-stream' });
+  await setDoc(fsDoc(firestore, 'users', uid, 'uploads', asset.id), {
+    id: asset.id, name: asset.name, mime: asset.mime, width: asset.width,
+    height: asset.height, addedAt: asset.addedAt, path, syncedAt: serverTimestamp(),
+  }, { merge: true });
+}
+
+export async function deleteUploadCloud(uid: string, id: string) {
+  const remote = fsDoc(firestore, 'users', uid, 'uploads', id);
+  const snapshot = await getDoc(remote);
+  const data = snapshot.data() as { path?: string } | undefined;
+  await deleteDoc(remote);
+  if (data?.path) await deleteObject(ref(storage, data.path)).catch(() => undefined);
+}
+
+export async function restoreCloudUploads(uid: string) {
+  const rows = await getDocs(collection(firestore, 'users', uid, 'uploads'));
+  const remoteIds = new Set(rows.docs.map((row) => row.id));
+  for (const row of rows.docs) {
+    const remote = row.data() as { id: string; name: string; mime: string; width: number; height: number; addedAt: number; path: string };
+    if (!remote.id || !remote.path) continue;
+    const local = await db.get<Asset & { addedAt: number }>('uploads', remote.id);
+    if (local && local.addedAt >= remote.addedAt) continue;
+    const bytes = await getBytes(ref(storage, remote.path));
+    await db.set('uploads', remote.id, {
+      id: remote.id, name: remote.name, mime: remote.mime, width: remote.width,
+      height: remote.height, bytes: new Uint8Array(bytes), addedAt: remote.addedAt,
+    } satisfies Asset & { addedAt: number });
+  }
+  const locals = await db.all<Asset & { addedAt: number }>('uploads');
+  for (const item of locals) {
+    if (remoteIds.has(item.value.id)) {
+      const row = rows.docs.find((entry) => entry.id === item.value.id);
+      if ((row?.data().addedAt ?? 0) >= item.value.addedAt) continue;
+    }
+    await syncUploadCloud(uid, item.value).catch((e) => console.error('Upload library cloud backup failed', e));
+  }
+}
 """)
 
 (src / "auth/AuthGate.tsx").write_text("""import { useEffect, useState, type FormEvent, type ReactNode } from 'react';
@@ -135,7 +178,7 @@ import { onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndP
 import { Capacitor } from '@capacitor/core';
 import { FirebaseAuthentication } from '@capacitor-firebase/authentication';
 import { auth, authReady } from './firebase';
-import { restoreCloudDesigns } from './cloud';
+import { restoreCloudDesigns, restoreCloudUploads } from './cloud';
 
 const LOGO = 'https://lh3.googleusercontent.com/aida-public/AB6AXuCmTmy3ETuD5atbGZG4-BP8X4yyDmE5Cd7G-Qu6bEWxcDhhKge-1zvwk3aAtl4tSF2R0kVPFkTFZYkRRvuKDgnXwKzr8jbo0KDpTD1GMZy5kq2Ib9fjBS79SpwcVeV1Id6uC3oJjxoUorjO4qS6vKIbyqw_JVqUiNA3kapyO_-oCdhEPjgQzU1O-VqMXv0Zh0qWk4RzsCFimnQ1Z6uacLqVxTf-8V51vxqtaoTmJTngDWcnyl7EnIDzMQ';
 const CSS = `
@@ -185,7 +228,7 @@ function AuthScreen(){
 
 export function AuthGate({ children }: { children: ReactNode }) {
  const [user,setUser]=useState(auth.currentUser),[ready,setReady]=useState(false);
- useEffect(()=>{let live=true;const unsub=onAuthStateChanged(auth,async current=>{if(!live)return;setUser(current);if(current){setReady(false);try{await restoreCloudDesigns(current.uid);}catch(e){console.error('Cloud restore failed',e);}if(live)setReady(true);}else if(live)setReady(true);});return()=>{live=false;unsub();};},[]);
+ useEffect(()=>{let live=true;const unsub=onAuthStateChanged(auth,async current=>{if(!live)return;setUser(current);if(current){setReady(false);try{await restoreCloudDesigns(current.uid);await restoreCloudUploads(current.uid);}catch(e){console.error('Cloud restore failed',e);}if(live)setReady(true);}else if(live)setReady(true);});return()=>{live=false;unsub();};},[]);
  if(!user)return <AuthScreen/>;
  if(!ready)return <div style={{minHeight:'100dvh',display:'grid',placeItems:'center',background:'#fff',color:'#0f172a',fontFamily:'system-ui'}}>Restoring your cloud designs…</div>;
  return <>{children}<button onClick={()=>signOut(auth)} title='Sign out' className='btn btn-outline' style={{position:'fixed',right:12,bottom:12,zIndex:10000}}>Sign out · {user.displayName||user.email||'Google account'}</button></>;
@@ -207,5 +250,20 @@ if "syncDesignCloud" not in body:
 body = body.replace("  notify();\n}\n\nexport async function updateEntry", "  notify();\n  const uid = auth.currentUser?.uid;\n  if (uid) await syncDesignCloud(uid, doc).catch((e) => console.error('Cloud save failed', e));\n}\n\nexport async function updateEntry", 1)
 body = body.replace("export async function deleteDesign(id: string) {\n", "export async function deleteDesign(id: string) {\n  const uid = auth.currentUser?.uid;\n  if (uid) await deleteDesignCloud(uid, id).catch((e) => console.error('Cloud delete failed', e));\n", 1)
 designs.write_text(body)
+
+# Keep the standalone Uploads library backed up per signed-in user as well.
+uploads = src / "io/uploads.ts"
+body = uploads.read_text()
+if "syncUploadCloud" not in body:
+    body = "import { auth } from '../auth/firebase';\nimport { syncUploadCloud, deleteUploadCloud } from '../auth/cloud';\n" + body
+    body = body.replace(
+        "  await db.set('uploads', asset.id, { ...asset, addedAt: Date.now() });",
+        "  const record = { ...asset, addedAt: Date.now() };\n  await db.set('uploads', asset.id, record);\n  const uid = auth.currentUser?.uid;\n  if (uid) await syncUploadCloud(uid, record).catch((e) => console.error('Upload cloud save failed', e));"
+    )
+    body = body.replace(
+        "  await db.del('uploads', id);",
+        "  const uid = auth.currentUser?.uid;\n  if (uid) await deleteUploadCloud(uid, id).catch((e) => console.error('Upload cloud delete failed', e));\n  await db.del('uploads', id);"
+    )
+    uploads.write_text(body)
 
 print("Firebase email/Google auth gate and per-user Yjs cloud backup/restore patches applied.")
