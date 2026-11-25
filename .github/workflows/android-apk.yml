@@ -78,6 +78,28 @@ jobs:
           if remaining:
               raise SystemExit("AI generation imports remain: " + ", ".join(remaining))
 
+          # Remove AI-powered photo tools too; keep deterministic manual photo filters.
+          adjust = Path("apps/editor/src/panels/AdjustPanel.tsx")
+          body = adjust.read_text()
+          body = body.replace("import { removeBackground } from '../tools/removeBackground';\\n", "")
+          body = body.replace("import { magicLayers } from '../tools/magicLayers';\\n", "")
+          body = body.replace("import { hasKey } from '../generate/openai';\\n", "")
+          body = body.replace("import { Icon } from '../ui/icons';\\n", "")
+          body, magic_count = re.subn(r"      <Section title=\"Magic\">.*?</Section>\\n", "", body, flags=re.S)
+          if magic_count != 1:
+              raise SystemExit(f"AI photo tools removal mismatch: {magic_count}")
+          adjust.write_text(body)
+          for path in ["apps/editor/src/tools/magicLayers.ts", "apps/editor/src/tools/removeBackground.ts"]:
+              Path(path).unlink(missing_ok=True)
+          ai_refs = []
+          for source in Path("apps/editor/src").rglob("*"):
+              if source.is_file() and source.suffix in {".ts", ".tsx", ".js", ".jsx"}:
+                  body = source.read_text(errors="ignore").lower()
+                  if "openai" in body or "huggingface" in body or "transformers" in body:
+                      ai_refs.append(str(source))
+          if ai_refs:
+              raise SystemExit("AI implementation references remain: " + ", ".join(ai_refs))
+
           # Use Android's native file/share APIs for exports inside the Capacitor WebView.
           exp = Path("apps/editor/src/export/exporters.ts")
           s = exp.read_text()
