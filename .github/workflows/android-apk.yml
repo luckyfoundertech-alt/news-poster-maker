@@ -418,6 +418,8 @@ jobs:
           PY
       - name: Apply Firebase authentication and cloud-sync implementation
         run: python3 scripts/patch_firebase.py opentempl
+      - name: Make cloud restore non-blocking and mobile-safe
+        run: python3 scripts/patch_nonblocking_restore.py
       - name: Build full OpenTempl editor and template library
         working-directory: opentempl
         run: |
