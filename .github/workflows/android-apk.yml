@@ -363,7 +363,10 @@ jobs:
         working-directory: android
         run: ./gradlew assembleDebug
       - name: Print Android debug signing SHA-1 for Firebase Google Sign-In setup
-        run: keytool -list -v -keystore "$HOME/.android/debug.keystore" -storepass android -alias androiddebugkey | grep -E 'SHA1:|SHA-1:'
+        run: |
+          KEYSTORE="$HOME/.config/.android/debug.keystore"
+          [ -f "$KEYSTORE" ] || KEYSTORE="$HOME/.android/debug.keystore"
+          keytool -list -v -keystore "$KEYSTORE" -storepass android -alias androiddebugkey | grep -E 'SHA1:|SHA-1:'
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
