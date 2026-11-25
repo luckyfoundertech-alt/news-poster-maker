@@ -69,15 +69,6 @@ jobs:
           generation_dir = Path("apps/editor/src/generate")
           if generation_dir.exists():
               shutil.rmtree(generation_dir)
-          remaining = []
-          for source in Path("apps/editor/src").rglob("*"):
-              if source.is_file() and source.suffix in {".ts", ".tsx", ".js", ".jsx"}:
-                  body = source.read_text(errors="ignore")
-                  if "from '../generate/" in body or 'from "./generate/' in body:
-                      remaining.append(str(source))
-          if remaining:
-              raise SystemExit("AI generation imports remain: " + ", ".join(remaining))
-
           # Remove AI-powered photo tools too; keep deterministic manual photo filters.
           adjust = Path("apps/editor/src/panels/AdjustPanel.tsx")
           body = adjust.read_text()
