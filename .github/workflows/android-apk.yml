@@ -121,6 +121,7 @@ jobs:
         working-directory: opentempl
         run: |
           npm ci
+          npm install -w @opentempl/editor @capacitor/core@^7.1.0 @capacitor/filesystem@^7.1.4 @capacitor/share@^7.0.2
           npm run build -w @opentempl/editor
       - name: Package editor as NEWS Android app
         run: |
