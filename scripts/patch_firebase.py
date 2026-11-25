@@ -48,7 +48,9 @@ export async function syncDesignCloud(uid: string, design: DesignDoc) {
   if (!uid || !id || !design.snapshot.pageOrder.length) return;
   const bytes = Y.encodeStateAsUpdate(design.ydoc);
   const path = `users/${uid}/designs/${id}/state.ydoc`;
-  await uploadBytes(ref(storage, path), new Blob([bytes], { type: 'application/octet-stream' }), { contentType: 'application/octet-stream' });
+  const stateBuffer = new ArrayBuffer(bytes.byteLength);
+  new Uint8Array(stateBuffer).set(bytes);
+  await uploadBytes(ref(storage, path), new Blob([stateBuffer], { type: 'application/octet-stream' }), { contentType: 'application/octet-stream' });
   const mediaFiles: Array<{ id: string; path: string; mime: string }> = [];
   const mediaIds = new Set<string>();
   for (const element of Object.values(design.snapshot.elements)) if (element.type === 'video') mediaIds.add(element.mediaId);
