@@ -47,7 +47,7 @@ Each signed-in user can read/write only their own `users/{uid}/designs/**` data 
 
 ## Release signing
 
-The CI debug APK is for installation/testing, not a Play Store release. A production release must be signed with a persistent Android upload/release keystore. Store the keystore and passwords in a secure password manager / CI secrets; never put them in Git. Register the release certificate fingerprints in Firebase before enabling production Google Sign-In.
+The CI debug APK is for installation/testing, not a Play Store release. The Android workflow now also builds a signed production APK and AAB when all four GitHub Actions repository secrets are configured: `ANDROID_KEYSTORE_BASE64` (base64-encoded persistent `.jks`/`.keystore` file), `ANDROID_KEY_ALIAS`, `ANDROID_KEYSTORE_PASSWORD`, and `ANDROID_KEY_PASSWORD`. Generate and keep one persistent upload/release keystore; store it and its passwords securely, never commit them to Git. Add the keystore's release SHA-1 and SHA-256 fingerprints to Firebase before enabling production Google Sign-In. Without these secrets the workflow deliberately produces only the debug APK.
 
 ## Security
 
