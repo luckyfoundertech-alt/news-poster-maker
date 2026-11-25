@@ -285,11 +285,13 @@ jobs:
               raise SystemExit(f"Native export patch: expected export call sites, found {calls}")
           exp.write_text(s)
           PY
+      - name: Apply Firebase authentication and cloud-sync implementation
+        run: python3 scripts/patch_firebase.py opentempl
       - name: Build full OpenTempl editor and template library
         working-directory: opentempl
         run: |
           npm ci
-          npm install -w @opentempl/editor @capacitor/core@^7.1.0 @capacitor/filesystem@^7.1.4 @capacitor/share@^7.0.2
+          npm install -w @opentempl/editor @capacitor/core@^7.1.0 @capacitor/filesystem@^7.1.4 @capacitor/share@^7.0.2 firebase@^12.6.0 @capacitor-firebase/authentication@^7.2.0
           npm run build -w @opentempl/editor
       - name: Package editor as NEWS Android app
         run: |
