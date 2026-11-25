@@ -32,7 +32,7 @@ export const authReady = setPersistence(auth, indexedDBLocalPersistence).catch((
 
 (src / "auth/cloud.ts").write_text("""import * as Y from 'yjs';
 import { IndexeddbPersistence } from 'y-indexeddb';
-import { collection, deleteDoc, doc as fsDoc, getDocs, serverTimestamp, setDoc } from 'firebase/firestore';
+import { collection, deleteDoc, doc as fsDoc, getDoc, getDocs, serverTimestamp, setDoc } from 'firebase/firestore';
 import { deleteObject, getBytes, ref, uploadBytes } from 'firebase/storage';
 import type { DesignDoc } from '../doc/design';
 import type { DesignEntry } from '../io/designs';
@@ -46,19 +46,33 @@ export async function syncDesignCloud(uid: string, design: DesignDoc) {
   const id = design.snapshot.meta.id;
   if (!uid || !id || !design.snapshot.pageOrder.length) return;
   const bytes = Y.encodeStateAsUpdate(design.ydoc);
-  const path = `users/${uid}/designs/${id}.ydoc`;
+  const path = `users/${uid}/designs/${id}/state.ydoc`;
   await uploadBytes(ref(storage, path), new Blob([bytes], { type: 'application/octet-stream' }), { contentType: 'application/octet-stream' });
+  const mediaFiles: Array<{ id: string; path: string; mime: string }> = [];
+  const mediaIds = new Set<string>();
+  for (const element of Object.values(design.snapshot.elements)) if (element.type === 'video') mediaIds.add(element.mediaId);
+  if (design.snapshot.meta.soundtrack?.mediaId) mediaIds.add(design.snapshot.meta.soundtrack.mediaId);
+  for (const mediaId of mediaIds) {
+    const blob = await db.get<Blob>('media', mediaId);
+    if (!blob) continue;
+    const mediaPath = `users/${uid}/designs/${id}/media/${mediaId}`;
+    await uploadBytes(ref(storage, mediaPath), blob, { contentType: blob.type || 'application/octet-stream' });
+    mediaFiles.push({ id: mediaId, path: mediaPath, mime: blob.type || 'application/octet-stream' });
+  }
   const m = design.snapshot.meta;
   await setDoc(remoteRef(uid, id), {
     id, title: m.title, width: m.width, height: m.height, formatId: m.formatId ?? null,
     createdAt: m.createdAt, updatedAt: m.updatedAt ?? Date.now(),
-    pages: design.snapshot.pageOrder.length, statePath: path, syncedAt: serverTimestamp(),
+    pages: design.snapshot.pageOrder.length, statePath: path, mediaFiles, syncedAt: serverTimestamp(),
   }, { merge: true });
 }
 
 export async function deleteDesignCloud(uid: string, id: string) {
+  const snapshot = await getDoc(remoteRef(uid, id));
+  const data = snapshot.data() as { statePath?: string; mediaFiles?: Array<{ path: string }> } | undefined;
   await deleteDoc(remoteRef(uid, id));
-  await deleteObject(ref(storage, `users/${uid}/designs/${id}.ydoc`)).catch(() => undefined);
+  if (data?.statePath) await deleteObject(ref(storage, data.statePath)).catch(() => undefined);
+  for (const file of data?.mediaFiles ?? []) await deleteObject(ref(storage, file.path)).catch(() => undefined);
 }
 
 export async function restoreCloudDesigns(uid: string) {
@@ -76,6 +90,11 @@ export async function restoreCloudDesigns(uid: string) {
     await persistence.whenSynced;
     const { DesignDoc } = await import('../doc/design');
     const design = new DesignDoc(ydoc);
+    const mediaFiles = (remote as typeof remote & { mediaFiles?: Array<{ id: string; path: string; mime: string }> }).mediaFiles ?? [];
+    for (const file of mediaFiles) {
+      const mediaBytes = await getBytes(ref(storage, file.path));
+      await db.set('media', file.id, new Blob([mediaBytes], { type: file.mime || 'application/octet-stream' }));
+    }
     const meta = design.snapshot.meta;
     await db.set('designs', remote.id, {
       id: remote.id, title: remote.title || meta.title, width: remote.width || meta.width,
@@ -83,6 +102,13 @@ export async function restoreCloudDesigns(uid: string) {
       createdAt: remote.createdAt || meta.createdAt, updatedAt: remote.updatedAt || Date.now(),
       pages: remote.pages || design.snapshot.pageOrder.length,
     } satisfies DesignEntry);
+    try {
+      const firstPage = design.snapshot.pageOrder[0];
+      if (firstPage) {
+        const { thumbnail } = await import('../export/render');
+        await db.set('thumbs', remote.id, await thumbnail(design, design.toSnapshot(), firstPage));
+      }
+    } catch (e) { console.warn('Cloud thumbnail restore skipped', e); }
     await persistence.destroy();
     design.destroy();
   }
