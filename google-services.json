@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "519573612826",
+    "project_id": "ghost-b9156",
+    "storage_bucket": "ghost-b9156.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:519573612826:android:8568296d317fa86bcfa4a3",
+        "android_client_info": {
+          "package_name": "com.luckyfoundertech.news"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDsCRBHw7EGuu1F3PwSyr2gGLwhLoqAjqE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
