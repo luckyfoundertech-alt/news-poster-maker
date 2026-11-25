@@ -359,12 +359,11 @@ jobs:
           PY
       - name: Sync full editor into Android
         run: npx cap sync android
-      - name: Print Android debug signing SHA-1 for Firebase Google Sign-In setup
-        working-directory: android
-        run: ./gradlew :app:signingReport
       - name: Build installable debug APK
         working-directory: android
         run: ./gradlew assembleDebug
+      - name: Print Android debug signing SHA-1 for Firebase Google Sign-In setup
+        run: keytool -list -v -keystore "$HOME/.android/debug.keystore" -storepass android -alias androiddebugkey | grep -E 'SHA1:|SHA-1:'
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
