@@ -11,6 +11,9 @@ on:
       - 'google-services.json'
       - 'scripts/**'
       - '.github/workflows/android-apk.yml'
+concurrency:
+  group: news-studio-android-${{ github.ref }}
+  cancel-in-progress: true
 permissions:
   contents: read
 jobs:
