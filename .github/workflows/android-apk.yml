@@ -97,6 +97,7 @@ jobs:
           body = re.sub(r"\s*\{SHOW_SOURCE \? \(.*?\) : null\}", "", body, flags=re.S)
           body = re.sub(r"\s*\{DESKTOP_LINK \? \(.*?\) : null\}", "", body, flags=re.S)
           body = body.replace("{DESKTOP_LINK ? : null}", "")
+          body = re.sub(r"\{DESKTOP_LINK \? .*? : null\}", "", body)
           body = body.replace('            <a href="#/generate">Generate</a>\n', "")
           body = body.replace('          <a href="#/generate">Generate</a>\n', "")
           body = body.replace('        <span className="home-gh">\n        </span>\n', "")
