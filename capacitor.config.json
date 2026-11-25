@@ -1,6 +1,6 @@
 {
   "appId": "com.luckyfoundertech.news",
-  "appName": "NEWS Poster Studio",
+  "appName": "NEWS Studio",
   "webDir": "www",
   "bundledWebRuntime": false,
   "android": {
