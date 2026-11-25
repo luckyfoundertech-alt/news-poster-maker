@@ -466,12 +466,17 @@ jobs:
           data = json.loads(index.read_text(encoding="utf-8"))
           templates = data.get("templates", [])
           vibes = data.get("vibes", {})
-          if len(templates) < 300:
-              raise SystemExit(f"Expected 300+ templates, found {len(templates)}")
-          missing = [t.get("id", "?") for t in templates if not (Path("www/templates") / f"{t.get('vibe')}.json").exists()]
+          if len(templates) < 337:
+              raise SystemExit(f"Expected at least 337 templates, found {len(templates)}")
+          ids = [t.get("id") for t in templates]
+          if any(not template_id for template_id in ids):
+              raise SystemExit("One or more templates are missing an ID")
+          if len(set(ids)) != len(ids):
+              raise SystemExit("Template index contains duplicate IDs")
+          missing = [t.get("id", "?") for t in templates if not t.get("vibe") or not (Path("www/templates") / f"{t.get('vibe')}.json").exists()]
           if missing:
               raise SystemExit(f"Template packs missing for: {', '.join(missing[:10])}")
-          print(f"Verified {len(templates)} templates across {len(vibes)} design styles.")
+          print(f"Verified {len(templates)} unique templates across {len(vibes)} design styles.")
           PY
       - name: Install Android shell dependencies and native export plugins
         run: |
