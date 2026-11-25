@@ -106,7 +106,22 @@ jobs:
 
           # Rebrand the editor's visible wordmark without removing required MIT notices.
           logo = Path("apps/editor/src/ui/Logo.tsx")
-          body = logo.read_text().replace('alt="OpenTempl"', 'alt="NEWS Studio"').replace("      OpenTempl\n", "      NEWS Studio\n")
+          body = logo.read_text()
+          start_mark = body.index("export function Mark(")
+          end_mark = body.index("// Wordmark", start_mark)
+          body = body[:start_mark] + """export function Mark({ size = 28 }: { size?: number }) {
+            return (
+              <svg width={size} height={size} viewBox="0 0 96 96" role="img" aria-label="NEWS Studio" style={{ display: 'block', flex: 'none' }}>
+                <rect width="96" height="96" rx="22" fill="#10213B" />
+                <path d="M20 70V26h12l24 27V26h13v44H57L33 43v27z" fill="#fff" />
+                <path d="M75 26h7v44h-7z" fill="#E53945" />
+                <path d="M20 78h62" stroke="#E53945" strokeWidth="5" strokeLinecap="round" />
+              </svg>
+            );
+          }
+
+          """ + body[end_mark:]
+          body = body.replace("      OpenTempl\n", "      NEWS Studio\n")
           logo.write_text(body)
           start = Path("apps/editor/src/start/Start.tsx")
           body = start.read_text()
