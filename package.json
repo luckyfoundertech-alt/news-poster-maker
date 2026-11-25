@@ -1,0 +1,16 @@
+{
+  "name": "news-poster-studio",
+  "version": "1.0.0",
+  "private": true,
+  "description": "NEWS Poster Studio Android and web app",
+  "scripts": {
+    "android:sync": "cap sync android"
+  },
+  "dependencies": {
+    "@capacitor/android": "^7.4.3",
+    "@capacitor/core": "^7.4.3"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^7.4.3"
+  }
+}
