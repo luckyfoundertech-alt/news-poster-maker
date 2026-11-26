@@ -328,4 +328,13 @@ for rel in [
         t = p.read_text(encoding="utf-8").replace("https://opentempl.org", "https://example.com")
         p.write_text(t, encoding="utf-8")
 
+
+# The optional local recipe bridge is still bundled for file interchange. Its QR starter
+# URL must be neutral too; no legacy brand URL should be embedded in newly created designs.
+recipe = Path("opentempl/mcp/recipe.ts")
+if recipe.exists():
+    t = recipe.read_text(encoding="utf-8").replace("https://opentempl.org", "https://example.com")
+    t = t.replace("OpenTempl", "NEWS Studio")
+    recipe.write_text(t, encoding="utf-8")
+
 print("NEWS Studio branding cleanup, dedicated RSS Newsroom route, and Android back handler patched.")
