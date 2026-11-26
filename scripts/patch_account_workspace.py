@@ -70,9 +70,16 @@ thumb_old = """  try {
   notify();"""
 thumb_new = """  notify();
   const first = doc.snapshot.pageOrder[0];
-  if (first) void thumbnail(doc, doc.toSnapshot(), first)
-    .then((preview) => db.set('thumbs', m.id, preview))
-    .catch(() => undefined);"""
+  if (first) {
+    const snapshot = doc.toSnapshot();
+    const previewYdoc = new Y.Doc();
+    Y.applyUpdate(previewYdoc, Y.encodeStateAsUpdate(doc.ydoc));
+    const previewDoc = new DesignDoc(previewYdoc);
+    void thumbnail(previewDoc, snapshot, first)
+      .then((preview) => db.set('thumbs', m.id, preview))
+      .catch(() => undefined)
+      .finally(() => previewDoc.destroy());
+  }"""
 if thumb_old in s:
     s = s.replace(thumb_old, thumb_new, 1)
 elif "const first = doc.snapshot.pageOrder[0];" not in s:
