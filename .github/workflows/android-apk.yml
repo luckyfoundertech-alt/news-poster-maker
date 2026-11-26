@@ -486,6 +486,22 @@ jobs:
           npm install @capacitor/filesystem@^7.1.4 @capacitor/share@^7.0.2
       - name: Generate Android project
         run: npx cap add android
+      - name: Add resilient Maven Central mirror for Android dependencies
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          path = Path("android/settings.gradle")
+          body = path.read_text()
+          block = re.search(r"(dependencyResolutionManagement\\s*\\{[\\s\\S]*?repositories\\s*\\{)", body)
+          if not block:
+              raise SystemExit("Could not find dependencyResolutionManagement repositories in Android settings.gradle")
+          mirror = '        maven { url "https://maven-central.storage-download.googleapis.com/maven2/" }\\n'
+          if "maven-central.storage-download.googleapis.com" not in body:
+              body = body[:block.end()] + "\\n" + mirror + body[block.end():]
+              path.write_text(body)
+          print("Configured Google-hosted Maven Central mirror before Maven Central fallback.")
+          PY
       - name: Configure Firebase Android SDK
         run: |
           cp google-services.json android/app/google-services.json
