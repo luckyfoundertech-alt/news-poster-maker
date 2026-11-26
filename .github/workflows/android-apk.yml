@@ -421,7 +421,6 @@ jobs:
       - name: Make cloud restore non-blocking and mobile-safe
         run: python3 scripts/patch_nonblocking_restore.py
       - name: Isolate local workspaces by Firebase account and make cloud sync non-blocking
-        working-directory: opentempl
         run: python3 scripts/patch_account_workspace.py
       - name: Arrange NEWS Studio mobile workspace and global search
         run: python3 scripts/patch_mobile_workspace.py
