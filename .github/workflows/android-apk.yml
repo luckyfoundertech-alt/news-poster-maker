@@ -428,7 +428,9 @@ jobs:
         run: python3 scripts/patch_brand_newsroom_back.py
       - name: Apply Stitch-inspired Android Home, Projects and bottom navigation
         run: python3 scripts/patch_stitch_pages.py
-      - name: Build full OpenTempl editor and template library
+      - name: Final NEWS Studio brand sweep and Android viewport compatibility
+        run: python3 scripts/patch_final_brand_mobile.py apply
+      - name: Build NEWS Studio editor and template library
         working-directory: opentempl
         run: |
           # Pin patched transitive packages without downgrading Firebase or forcing unrelated major changes.
@@ -460,6 +462,7 @@ jobs:
           test -f opentempl/dist/app/index.html
           rm -rf www/*
           cp -a opentempl/dist/app/. www/
+          python3 scripts/patch_final_brand_mobile.py verify www
           sed -i 's/OpenTempl: free open source Canva alternative/NEWS Studio — Design Editor/g' www/index.html
           sed -i 's/<title>OpenTempl/<title>NEWS Studio/' www/index.html
           cp opentempl/LICENSE OPEN-TEMPL-LICENSE
