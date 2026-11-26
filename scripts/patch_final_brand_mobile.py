@@ -159,7 +159,7 @@ button,a,input,select,textarea{touch-action:manipulation}
 """
         current = home_css.read_text(encoding="utf-8")
         if "Final Canva-inspired NEWS Studio home and template layout" not in current:
-            home_css.write_text(current + "\\n" + styles, encoding="utf-8")
+            home_css.write_text(current + "\n" + styles, encoding="utf-8")
         home_tsx = SRC / "home" / "Home.tsx"
         if home_tsx.exists():
             hs = home_tsx.read_text(encoding="utf-8")
