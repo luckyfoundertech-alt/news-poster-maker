@@ -420,6 +420,8 @@ jobs:
         run: python3 scripts/patch_firebase.py opentempl
       - name: Make cloud restore non-blocking and mobile-safe
         run: python3 scripts/patch_nonblocking_restore.py
+      - name: Arrange NEWS Studio mobile workspace and global search
+        run: python3 scripts/patch_mobile_workspace.py
       - name: Build full OpenTempl editor and template library
         working-directory: opentempl
         run: |
