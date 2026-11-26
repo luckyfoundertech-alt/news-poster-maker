@@ -49,6 +49,7 @@ def apply():
     if html.exists():
         page = html.read_text(encoding="utf-8")
         page = page.replace("OpenTempl", "NEWS Studio").replace("Open Templ", "NEWS Studio")
+        page = page.replace("canva-vs-opentempl", "news-studio-vs-canva")
         page = re.sub(r'"sameAs"\s*:\s*\[[^\]]*\]\s*,?', "", page)
         html.write_text(page, encoding="utf-8")
     # Enforce a mobile viewport in the actual editor document before Vite builds it.
