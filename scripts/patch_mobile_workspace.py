@@ -95,4 +95,54 @@ t = t.replace("document.title = 'Start a design · OpenTempl';", "document.title
 t = t.replace('aria-label="OpenTempl home"', 'aria-label="NEWS Studio home"')
 start.write_text(t, encoding="utf-8")
 
+
+# Dedicated profile page with account details, saved designs and uploaded files.
+profile_source = Path("scripts/profile_module.tsx")
+if not profile_source.exists():
+    raise SystemExit("NEWS Studio profile module source is missing.")
+profile = root / "profile/Profile.tsx"
+profile.parent.mkdir(parents=True, exist_ok=True)
+profile.write_text(profile_source.read_text(encoding="utf-8"), encoding="utf-8")
+
+app = root / "App.tsx"
+body = app.read_text(encoding="utf-8")
+if "import { Profile } from './profile/Profile';" not in body:
+    body = "import { Profile } from './profile/Profile';\n" + body
+if "if (path === '/profile') return <Profile />;" not in body:
+    body = body.replace("  if (path === '/icons') return <IconSheet />;", "  if (path === '/profile') return <Profile />;\n  if (path === '/icons') return <IconSheet />;", 1)
+body = body.replace('  return <Loading label="Laying out a fresh sheet" />;', '  return <div className="ns-opening-sheet" aria-live="polite">Opening your design…</div>;')
+app.write_text(body, encoding="utf-8")
+
+# Move sign-out into Profile; remove the floating bottom-right account control.
+gate = root / "auth/AuthGate.tsx"
+body = gate.read_text(encoding="utf-8")
+body = re.sub(r"<button onClick=\{\(\)=>signOut\(auth\)\} title='Sign out'.*?</button>", "", body)
+gate.write_text(body, encoding="utf-8")
+
+home = root / "home/Home.tsx"
+body = home.read_text(encoding="utf-8")
+if 'href="#/profile"' not in body:
+    body = body.replace('<button className="btn btn-outline home-open" onClick={openPicked}>', '<a className="btn btn-outline" href="#/profile">My Profile</a>\n        <button className="btn btn-outline home-open" onClick={openPicked}>', 1)
+    body = body.replace('<button onClick={openPicked}>Open a file</button>', '<button onClick={openPicked}>Open a file</button>\n            <a href="#/profile">My Profile</a>', 1)
+home.write_text(body, encoding="utf-8")
+
+css = root / "home/home.css"
+body = css.read_text(encoding="utf-8")
+body += """
+.ns-opening-sheet{height:100dvh;display:grid;place-items:center;background:var(--paper);color:var(--ink-2);font:500 13px system-ui,sans-serif}
+.ns-profile{height:100dvh;overflow:auto;background:var(--paper);color:var(--ink);padding-bottom:env(safe-area-inset-bottom)}
+.ns-profile-head{min-height:60px;position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:16px;padding:10px 16px;background:var(--paper);border-bottom:1px solid var(--line)}
+.ns-profile-head>b{font-size:16px}.ns-profile-head button{border:1px solid var(--line);background:var(--paper-2);border-radius:10px;padding:9px 13px;color:var(--ink);font:600 13px system-ui}.ns-profile-head .ns-profile-signout{margin-left:auto;color:#b42318}
+.ns-profile-main{width:min(100% - 32px,920px);margin:24px auto 48px}.ns-profile-card{display:flex;align-items:center;gap:16px;padding:22px;border:1px solid var(--line);border-radius:18px;background:var(--paper-2)}
+.ns-profile-avatar{width:68px;height:68px;flex:none;border-radius:50%;display:grid;place-items:center;overflow:hidden;background:#dbeafe;color:#1d4ed8;font-size:25px;font-weight:800}.ns-profile-avatar img{width:100%;height:100%;object-fit:cover}
+.ns-profile-card h1{font-size:22px;margin:0 0 4px}.ns-profile-card p{margin:0 0 5px;color:var(--ink-2);overflow-wrap:anywhere}.ns-profile-card small,.ns-profile-file small,.ns-profile-design small{display:block;color:var(--ink-3);font-size:12px;margin-top:4px;overflow-wrap:anywhere}
+.ns-profile-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:16px 0}.ns-profile-stats>div{padding:15px;border:1px solid var(--line);border-radius:14px;background:var(--paper-2)}.ns-profile-stats b{display:block;font-size:21px}.ns-profile-stats span{display:block;color:var(--ink-2);font-size:12px;margin-top:4px}
+.ns-profile-tabs{display:flex;gap:8px;overflow:auto;border-bottom:1px solid var(--line);margin-top:20px}.ns-profile-tabs button{flex:none;padding:12px 14px;background:transparent;color:var(--ink-2);border-bottom:2px solid transparent;font:600 13px system-ui}.ns-profile-tabs button.active{color:var(--ink);border-color:var(--accent,#2563eb)}
+.ns-profile-list{padding:20px 0}.ns-profile-list h2{font-size:18px;margin:0 0 14px}.ns-profile-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px}.ns-profile-design{min-width:0;text-align:left;padding:10px;border:1px solid var(--line);border-radius:13px;background:var(--paper-2);color:var(--ink)}.ns-profile-preview{height:145px;display:grid;place-items:center;background:var(--paper);border-radius:9px;overflow:hidden;margin-bottom:9px}.ns-profile-preview img{width:100%;height:100%;object-fit:contain}.ns-profile-design>b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px}
+.ns-profile-files{display:grid;gap:9px}.ns-profile-file{display:flex;align-items:center;gap:12px;padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--paper-2);min-width:0}.ns-profile-file-icon{width:40px;height:40px;flex:none;display:grid;place-items:center;border-radius:9px;background:var(--paper);font-size:22px}.ns-profile-file>div{min-width:0}.ns-profile-file b{display:block;overflow-wrap:anywhere;font-size:13px}
+.ns-profile-account{display:grid;gap:13px;max-width:520px}.ns-profile-account label{display:grid;gap:6px;font-size:12px;font-weight:650}.ns-profile-account input{width:100%;height:44px;padding:0 12px;border:1px solid var(--line);border-radius:10px;background:var(--paper-2);color:var(--ink);font:14px system-ui}.ns-profile-save{min-height:44px;padding:0 16px;border-radius:10px;background:var(--accent,#2563eb);color:white;font-weight:700}.ns-profile-save:disabled{opacity:.55}.ns-profile-empty,.ns-profile-foot{color:var(--ink-3);font-size:13px}.ns-profile-foot{margin-top:28px;padding:14px 0;border-top:1px solid var(--line)}
+@media(max-width:520px){.ns-profile-main{width:calc(100% - 24px);margin-top:14px}.ns-profile-card{padding:15px;gap:12px}.ns-profile-avatar{width:54px;height:54px}.ns-profile-card h1{font-size:18px}.ns-profile-stats{gap:7px}.ns-profile-stats>div{padding:11px 9px}.ns-profile-stats b{font-size:18px}.ns-profile-stats span{font-size:10px}.ns-profile-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.ns-profile-preview{height:120px}.ns-profile-tabs button{padding:11px 10px;font-size:12px}}
+"""
+css.write_text(body, encoding="utf-8")
+
 print("NEWS Studio workspace and scoped newsroom search patched.")
