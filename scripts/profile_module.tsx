@@ -19,7 +19,7 @@ export function Profile() {
 
   useEffect(() => {
     let live = true;
-    const load = async () => {
+    const refresh = async () => {
       const [d,u] = await Promise.all([listDesigns(),listUploads()]);
       if (!live) return;
       setDesigns(d); setUploads(u);
@@ -30,10 +30,12 @@ export function Profile() {
       if (live) setThumbs(Object.fromEntries(pairs.filter(([,url]) => !!url)));
       else pairs.forEach(([,url]) => url && URL.revokeObjectURL(url));
     };
-    void load();
-    const a = onDesignsChange(() => void listDesigns().then(v => live && setDesigns(v)));
-    const b = onUploadsChange(() => void listUploads().then(v => live && setUploads(v)));
-    return () => { live=false; a(); b(); };
+    const onCloudRestored = () => { void refresh(); };
+    void refresh();
+    const a = onDesignsChange(() => { void refresh(); });
+    const b = onUploadsChange(() => { void refresh(); });
+    window.addEventListener('news-cloud-restored', onCloudRestored);
+    return () => { live=false; a(); b(); window.removeEventListener('news-cloud-restored', onCloudRestored); };
   }, []);
 
   const saveName = async () => {
