@@ -195,7 +195,7 @@ if manifest.exists():
         data["short_name"] = "NEWS Studio"
         data["description"] = "Create, edit and export professional news graphics on Android."
         data["icons"] = [{"src": "news-studio-logo.webp", "sizes": "64x64", "type": "image/webp", "purpose": "any maskable"}]
-        manifest.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\\n", encoding="utf-8")
+        manifest.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     except Exception as exc:
         raise SystemExit("Could not update NEWS Studio app manifest: " + str(exc))
 
