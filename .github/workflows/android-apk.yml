@@ -424,6 +424,8 @@ jobs:
         run: python3 scripts/patch_account_workspace.py
       - name: Arrange NEWS Studio mobile workspace and global search
         run: python3 scripts/patch_mobile_workspace.py
+      - name: Rebrand Android app, create dedicated Newsroom and fix system Back
+        run: python3 scripts/patch_brand_newsroom_back.py
       - name: Build full OpenTempl editor and template library
         working-directory: opentempl
         run: |
@@ -483,6 +485,9 @@ jobs:
           print(f"Verified {len(templates)} unique templates across {len(vibes)} design styles.")
           PY
       - name: Install Android shell dependencies and native export plugins
+        run: |
+          npm install @capacitor/app@^7.0.1 --no-fund
+          npm install @capacitor/filesystem@^7.1.4 @capacitor/share@^7.0.2
         run: |
           npm install
           npm install @capacitor/filesystem@^7.1.4 @capacitor/share@^7.0.2
