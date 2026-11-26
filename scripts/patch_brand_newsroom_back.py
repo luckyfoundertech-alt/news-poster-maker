@@ -177,6 +177,28 @@ if 'href="#/newsroom"' not in h:
     raise SystemExit("Newsroom navigation link was not added.")
 app.write_text(s, encoding="utf-8")
 
+# Remove upstream marketing/SEO pages and old standalone marks from the Android package.
+import shutil
+for page in public.rglob("*.html"):
+    page.unlink()
+for old_mark in public.glob("mark-*.png"):
+    old_mark.unlink()
+seo_assets = public / "seo"
+if seo_assets.exists():
+    shutil.rmtree(seo_assets)
+
+manifest = public / "manifest.webmanifest"
+if manifest.exists():
+    try:
+        data = json.loads(manifest.read_text(encoding="utf-8"))
+        data["name"] = "NEWS Studio"
+        data["short_name"] = "NEWS Studio"
+        data["description"] = "Create, edit and export professional news graphics on Android."
+        data["icons"] = [{"src": "news-studio-logo.webp", "sizes": "64x64", "type": "image/webp", "purpose": "any maskable"}]
+        manifest.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\\n", encoding="utf-8")
+    except Exception as exc:
+        raise SystemExit("Could not update NEWS Studio app manifest: " + str(exc))
+
 # Android app metadata and legacy desktop/computer copy cleanup.
 editor_html = Path("opentempl/apps/editor/index.html")
 if editor_html.exists():
