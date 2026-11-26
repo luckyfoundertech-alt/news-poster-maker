@@ -430,6 +430,8 @@ jobs:
         run: python3 scripts/patch_stitch_pages.py
       - name: Final NEWS Studio brand sweep and Android viewport compatibility
         run: python3 scripts/patch_final_brand_mobile.py apply
+      - name: Apply unified Canva-inspired NEWS Studio UI system
+        run: python3 scripts/patch_canva_ui_system.py
       - name: Build NEWS Studio editor and template library
         working-directory: opentempl
         run: |
