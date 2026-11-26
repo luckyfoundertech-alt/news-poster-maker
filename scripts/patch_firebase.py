@@ -245,7 +245,7 @@ body = app.read_text()
 if "import { AuthGate } from './auth/AuthGate';" not in body:
     body = "import { AuthGate } from './auth/AuthGate';\n" + body
 body = body.replace("export function App() {", "function AppRoutes() {", 1)
-body += "\nexport function App() { return <AuthGate><AppRoutes /></AuthGate>; }\n"
+body += "\nexport function App() { if (import.meta.env.DEV && window.location.hash.startsWith('#/render')) return <AppRoutes />; return <AuthGate><AppRoutes /></AuthGate>; }\n"
 app.write_text(body)
 
 designs = src / "io/designs.ts"
