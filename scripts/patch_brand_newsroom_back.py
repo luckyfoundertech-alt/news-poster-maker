@@ -118,7 +118,7 @@ if "installAndroidBackNavigation" not in s:
 function installAndroidBackNavigation() {
   if (backHandlerInstalled) return;
   backHandlerInstalled = true;
-  const handleBack = () => {
+  const handleBack = (exitApp?: () => void) => {
     const keyEvent = new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true });
     document.dispatchEvent(keyEvent);
     if (keyEvent.defaultPrevented) return;
@@ -133,7 +133,7 @@ function installAndroidBackNavigation() {
     if (event.key === 'Escape' && event.defaultPrevented) return;
   });
   void import('@capacitor/app').then(({ App: NativeApp }) => {
-    void NativeApp.addListener('backButton', () => handleBack());
+    void NativeApp.addListener('backButton', () => handleBack(() => { void NativeApp.exitApp(); }));
   }).catch(() => {
     window.addEventListener('popstate', () => {});
   });
