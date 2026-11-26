@@ -37,19 +37,36 @@ const stateGroup = groups.find(g => g.key === 'state-district');
 if (!stateGroup) throw new Error('State/district category missing.');
 stateGroup.topics.push(...districts);
 const aliasesByGroup = {
- 'bharat-news':['breaking','breaking news','latest news','top story','taaja khabar','taja khabar','badi khabar','samachar','news update','flash news','भारत समाचार','ताज़ा समाचार'],
- 'state-district':['local news','city news','district news','ground report','raipur','mungeli','bilaspur','durg','korba','bastar','jagdalpur','chhattisgarh','cg news','छत्तीसगढ़','मुंगेली','रायपुर'],
- 'politics-public':['political news','election news','chunav','rajniti','sarkar','lok sabha','vidhan sabha','जनता की आवाज़'],
- 'cricket-sports':['cricket news','live score','ipl','t20','one day','odi','match result','scorecard','khiladi','khel samachar'],
- 'business-education':['job alert','rojgar','naukri','sarkari naukri','exam result','admit card','career','business news','share market','शासकीय नौकरी'],
- 'indian-festivals':['diwali','deepawali','holi','eid','navratri','durga puja','ganesh chaturthi','dussehra','dashahara','chhath','chhath puja','rakhi','raksha bandhan','janmashtami','onam','pongal','baisakhi','makar sankranti','gurpurab','festival wishes','शुभ दीपावली'],
- 'national-culture':['independence day','republic day','gandhi jayanti','constitution day','tiranga','bharat mata','desh bhakti','national festival','भारतीय विरासत']
+ 'bharat-news':['breaking','latest news','top story','taaja khabar','taja khabar','badi khabar','samachar','news update','flash news'],
+ 'state-district':['local news','city news','district news','ground report'],
+ 'politics-public':['political news','election news','chunav','rajniti','sarkar','lok sabha','vidhan sabha'],
+ 'cricket-sports':['sports','sports news','khel samachar'],
+ 'business-education':['business','education','career','economy','व्यापार','शिक्षा'],
+ 'indian-festivals':['festival','festival wishes','tyohar','त्योहार','भारतीय पर्व'],
+ 'national-culture':['national day','indian culture','heritage','national festival']
+};
+const aliasesByTopic = {
+ 'diwali':['diwali','deepawali','deepavali','दीपावली','दीवाली'],
+ 'holi':['holi','holi wishes'],
+ 'eid':['eid','eid mubarak'],
+ 'navratri':['navratri','navratra'],
+ 'durga puja':['durga puja','durga pujo'],
+ 'ganesh chaturthi':['ganesh chaturthi','ganpati','ganesh utsav'],
+ 'dussehra':['dussehra','dashahara','vijayadashami'],
+ 'christmas':['christmas','xmas'],
+ 'baisakhi':['baisakhi','vaisakhi'],
+ 'raksha bandhan':['rakhi','raksha bandhan'],
+ 'janmashtami':['janmashtami','krishna janmashtami'],
+ 'chhath puja':['chhath','chhath puja'],
+ 'makar sankranti':['makar sankranti','sankranti'],
+ 'guru nanak jayanti':['gurpurab','guru nanak jayanti'],
+ 'chhattisgarh news':['cg news','chhattisgarh','छत्तीसगढ़']
 };
 """
 extra = extra.replace("weight:900", "weight:800")
 s = s.replace(marker, extra + "\n" + marker, 1)
 old_tags = "const tags = [...new Set([...g.tags, topic[0].toLowerCase(), topic[1], g.name.toLowerCase(), title.toLowerCase(), hindi, g.en[i % g.en.length].toLowerCase(), g.hi[(i + Math.floor(i/5)) % g.hi.length], f.id, ['red bulletin','editorial grid','photo story','modern hindi','regional poster'][li%5]])];"
-new_tags = "const tags = [...new Set([...g.tags, ...(aliasesByGroup[g.key] || []), topic[0].toLowerCase(), topic[1], g.name.toLowerCase(), title.toLowerCase(), hindi, g.en[i % g.en.length].toLowerCase(), g.hi[(i + Math.floor(i/5)) % g.hi.length], f.id, styleNames[li % styleNames.length].toLowerCase()])];"
+new_tags = "const tags = [...new Set([...g.tags, ...(aliasesByGroup[g.key] || []), ...(aliasesByTopic[topic[0].toLowerCase()] || []), topic[0].toLowerCase(), topic[1], g.name.toLowerCase(), title.toLowerCase(), hindi, g.en[i % g.en.length].toLowerCase(), g.hi[(i + Math.floor(i/5)) % g.hi.length], f.id, styleNames[li % styleNames.length].toLowerCase()])];"
 if old_tags not in s: raise SystemExit("tag generation line missing")
 s = s.replace(old_tags, new_tags, 1)
 old_name = "name:" + chr(96) + "$" + "{topic[0]} " + "$" + "{String(i+1).padStart(3,'0')} · " + "$" + "{['Bold Bulletin','Editorial Grid','Photo Story','Modern Hindi','Regional Press'][li%5]}" + chr(96) + ","
