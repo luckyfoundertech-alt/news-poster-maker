@@ -6,7 +6,8 @@ import { spawn } from 'node:child_process';
 const cwd = process.cwd();
 const require = createRequire(path.join(cwd, 'package.json'));
 const puppeteer = require('puppeteer-core');
-const chromium = require('@sparticuz/chromium');
+const chromiumModule = await import('@sparticuz/chromium');
+const chromium = chromiumModule.default || chromiumModule;
 const editor = path.join(cwd, 'apps/editor');
 const publicDir = path.join(editor, 'public');
 const index = JSON.parse(fs.readFileSync(path.join(publicDir, 'templates/index.json'), 'utf8'));
@@ -29,10 +30,10 @@ try {
   }
   if(!ready) throw new Error('Vite preview server did not start on port 5181.');
   browser = await puppeteer.launch({
-    args: chromium.args,
+    args: await puppeteer.defaultArgs({ args: chromium.args, headless: 'shell' }),
     defaultViewport: { width: 900, height: 1200, deviceScaleFactor: 1 },
     executablePath: await chromium.executablePath(),
-    headless: chromium.headless,
+    headless: 'shell',
   });
   const workers = 3;
   const pages = await Promise.all(Array.from({length:workers},()=>browser.newPage()));
