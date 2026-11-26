@@ -33,7 +33,7 @@ def apply():
                 original = p.read_text(encoding="utf-8")
             except (UnicodeDecodeError, OSError):
                 continue
-            updated = re.sub(r"https?://(?:www\\.)?opentempl\\.org[^\\s\\\"<>)]*", "https://example.com", original, flags=re.I)
+            updated = re.sub(r'https?://(?:www\.)?opentempl\.org[^\s"<>)]*', "https://example.com", original, flags=re.I)
             updated = re.sub(r"opentempl", "NEWS Studio", updated, flags=re.I)
             updated = re.sub(r"Open Templ", "NEWS Studio", updated, flags=re.I)
             updated = re.sub(r"on your computer", "on your Android device", updated, flags=re.I)
