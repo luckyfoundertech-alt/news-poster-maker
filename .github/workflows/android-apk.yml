@@ -1,4 +1,4 @@
-name: Build NEWS Android APK
+name: Build NEWS Studio Android AAB
 on:
   workflow_dispatch:
   push:
@@ -586,22 +586,6 @@ jobs:
                   raise SystemExit(f"Maven mirror health check failed: HTTP {response.status}")
               print(f"Maven mirror health check passed: HTTP {response.status}, {response.headers.get('Content-Length', 'unknown')} bytes")
           PY
-      - name: Build installable debug APK
-        working-directory: android
-        run: |
-          set -o pipefail
-          attempt=1
-          max_attempts=3
-          until ./gradlew --no-daemon --max-workers=2 assembleDebug; do
-            if [ "$attempt" -ge "$max_attempts" ]; then
-              echo "Android debug APK build failed after $max_attempts attempts."
-              exit 1
-            fi
-            delay=$((attempt * 20))
-            echo "Gradle build attempt $attempt failed; retrying after ${delay}s with dependency cache retained."
-            sleep "$delay"
-            attempt=$((attempt + 1))
-          done
       - name: Build debug-signed Android App Bundle (AAB)
         working-directory: android
         run: ./gradlew --no-daemon --max-workers=2 bundleDebug
@@ -657,7 +641,7 @@ jobs:
           retention-days: 90
       - name: Explain unsigned-only build
         if: ${{ env.ANDROID_KEYSTORE_BASE64 == '' || env.ANDROID_KEY_ALIAS == '' || env.ANDROID_KEYSTORE_PASSWORD == '' || env.ANDROID_KEY_PASSWORD == '' }}
-        run: echo "::warning::Release signing secrets are not configured. Debug APK built; signed Play Store release skipped."
+        run: echo "::warning::Release signing secrets are not configured. Debug AAB built; signed Play Store release skipped."
       - name: Print Android debug signing SHA-1 for Firebase Google Sign-In setup
         run: |
           KEYSTORE="$HOME/.config/.android/debug.keystore"
@@ -670,11 +654,4 @@ jobs:
           name: NEWS-Studio-Security-Audit
           path: opentempl/security-reports/
           if-no-files-found: warn
-          retention-days: 30
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: NEWS-Studio-Android-APK
-          path: android/app/build/outputs/apk/debug/app-debug.apk
-          if-no-files-found: error
           retention-days: 30
