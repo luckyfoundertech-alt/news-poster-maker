@@ -486,11 +486,8 @@ jobs:
           PY
       - name: Install Android shell dependencies and native export plugins
         run: |
-          npm install @capacitor/app@^7.0.1 --no-fund
-          npm install @capacitor/filesystem@^7.1.4 @capacitor/share@^7.0.2
-        run: |
           npm install
-          npm install @capacitor/filesystem@^7.1.4 @capacitor/share@^7.0.2
+          npm install @capacitor/app@^7.0.1 @capacitor/filesystem@^7.1.4 @capacitor/share@^7.0.2 --no-fund
       - name: Generate Android project
         run: npx cap add android
       - name: Configure Firebase Android SDK
