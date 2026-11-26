@@ -252,4 +252,64 @@ for folder in [root, public]:
         t = t.replace("opentempl|tavla", "newsstudio")
         if t != original: p.write_text(t, encoding="utf-8")
 
+
+# Final product-language sweep for every visible editor screen and export surface.
+# Keep legacy .opentempl/.tavla import support for existing user files, but create and
+# advertise only the NEWS Studio project format.
+ui_files = [
+    "chrome/TopBar.tsx", "chrome/ShareDialog.tsx", "chrome/ExportDialog.tsx",
+    "chrome/CommandPalette.tsx", "editor/EditorScreen.tsx", "ui/IconSheet.tsx",
+    "agent/OpenDraft.tsx", "panels/HistoryPanel.tsx", "panels/AudioPanel.tsx",
+    "panels/PhotosPanel.tsx", "panels/StylesPanel.tsx", "panels/ToolsPanel.tsx",
+    "panels/ElementsPanel.tsx", "io/upload.ts", "home/Home.tsx", "start/Start.tsx",
+    "export/exporters.ts", "index.html"
+]
+for rel in ui_files:
+    p = Path("opentempl/apps/editor/src") / rel if rel != "index.html" else Path("opentempl/apps/editor/index.html")
+    if not p.exists(): continue
+    t = p.read_text(encoding="utf-8")
+    t = t.replace("OpenTempl", "NEWS Studio").replace("opentempl.org", "example.com")
+    t = t.replace("Open an .opentempl file", "Open a NEWS Studio project")
+    t = t.replace("Download .opentempl file", "Download NEWS Studio project")
+    t = t.replace("Download as .opentempl file", "Download NEWS Studio project")
+    t = t.replace("An .opentempl file", "A NEWS Studio project file")
+    t = t.replace(".opentempl file", "NEWS Studio project file")
+    t = t.replace("on this computer", "on this device").replace("on your computer", "on your Android device")
+    t = t.replace("Rendered on this computer.", "Rendered on your Android device.")
+    t = t.replace("on your machine", "on your device")
+    t = t.replace("Everything you make stays on this computer.", "Your designs stay in your NEWS Studio account.")
+    if rel == "export/exporters.ts":
+        t = t.replace(".opentempl" + chr(96), ".newsstudio" + chr(96))
+    if rel == "chrome/ExportDialog.tsx":
+        t = t.replace("name: 'OpenTempl file'", "name: 'NEWS Studio project'")
+        t = t.replace("note: 'The editable design, to keep or send'", "note: 'Your editable NEWS Studio project'")
+    if rel == "chrome/TopBar.tsx":
+        t = t.replace("pickFiles('.opentempl,.tavla')", "pickFiles('.newsstudio,.opentempl,.tavla')")
+        t = t.replace("pickFiles('.newsstudio')", "pickFiles('.newsstudio,.opentempl,.tavla')")
+    if rel == "home/Home.tsx":
+        t = t.replace("name.endsWith('.opentempl') || name.endsWith('.tavla')", "name.endsWith('.newsstudio') || name.endsWith('.opentempl') || name.endsWith('.tavla')")
+        t = t.replace("pickFiles('.opentempl,.tavla,.pdf,.pptx')", "pickFiles('.newsstudio,.opentempl,.tavla,.pdf,.pptx')")
+    if rel == "index.html":
+        t = re.sub(r'<link rel="canonical"[^>]*opentempl\.org[^>]*>', "", t, flags=re.I)
+        t = re.sub(r'<meta[^>]+opentempl\.org[^>]*>', "", t, flags=re.I)
+    p.write_text(t, encoding="utf-8")
+
+# Clean visible brand references in every app source component, including helper panels.
+for p in root.rglob("*"):
+    if not p.is_file() or p.suffix.lower() not in {".ts", ".tsx", ".js", ".jsx"}: continue
+    if any(x in p.parts for x in ["licenses", "legal", "third_party", "third-party"]): continue
+    try: t = p.read_text(encoding="utf-8")
+    except Exception: continue
+    updated = t.replace("OpenTempl", "NEWS Studio")
+    updated = updated.replace("on this computer", "on this device").replace("on your computer", "on your Android device")
+    updated = updated.replace("Desktop app for Mac, Windows and Linux", "")
+    if updated != t: p.write_text(updated, encoding="utf-8")
+
+# Keep WebView document titles consistently branded.
+for rel in ["App.tsx", "editor/EditorScreen.tsx", "present/Presenter.tsx", "start/Start.tsx"]:
+    p = root / rel
+    if p.exists():
+        t = p.read_text(encoding="utf-8").replace("OpenTempl", "NEWS Studio")
+        p.write_text(t, encoding="utf-8")
+
 print("NEWS Studio branding cleanup, dedicated RSS Newsroom route, and Android back handler patched.")
