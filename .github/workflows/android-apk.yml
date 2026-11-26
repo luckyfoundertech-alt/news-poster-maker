@@ -602,6 +602,16 @@ jobs:
             sleep "$delay"
             attempt=$((attempt + 1))
           done
+      - name: Build debug-signed Android App Bundle (AAB)
+        working-directory: android
+        run: ./gradlew --no-daemon --max-workers=2 bundleDebug
+      - name: Upload debug AAB
+        uses: actions/upload-artifact@v4
+        with:
+          name: NEWS-Studio-Android-AAB-Debug
+          path: android/app/build/outputs/bundle/debug/*.aab
+          if-no-files-found: error
+          retention-days: 30
       - name: Build signed production APK and AAB when release secrets are configured
         if: ${{ env.ANDROID_KEYSTORE_BASE64 != '' && env.ANDROID_KEY_ALIAS != '' && env.ANDROID_KEYSTORE_PASSWORD != '' && env.ANDROID_KEY_PASSWORD != '' }}
         env:
