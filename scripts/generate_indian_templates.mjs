@@ -93,7 +93,7 @@ for (const g of groups) {
     const hindi = g.hi[(i + Math.floor(i/5)) % g.hi.length];
     const elements = layouts[li](W,H,c,pi,{en:title,hi:hindi});
     // Unique editorial issue marker and an editable source/date line on every layout.
-    const markY = Math.min(H*.965,H-24);
+    const markY = Math.min(H*.94,H-42);
     elements.push(T(String(i+1).padStart(3,'0'),W*.86,markY,W*.09,{size:Math.max(15,W*.018),weight:800,color:c[2],align:'right'}));
     const tags = [...new Set([...g.tags, g.name.toLowerCase(), title.toLowerCase(), hindi, f.id, ['red bulletin','editorial grid','photo story','modern hindi','regional poster'][li%5]])];
     templates.push(tpl({
