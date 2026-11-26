@@ -2,11 +2,12 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { createRequire } from 'node:module';
 import { spawn } from 'node:child_process';
+import { pathToFileURL } from 'node:url';
 
 const cwd = process.cwd();
 const require = createRequire(path.join(cwd, 'package.json'));
 const puppeteer = require('puppeteer-core');
-const chromiumModule = await import('@sparticuz/chromium');
+const chromiumModule = await import(pathToFileURL(require.resolve('@sparticuz/chromium')).href);
 const chromium = chromiumModule.default || chromiumModule;
 const editor = path.join(cwd, 'apps/editor');
 const publicDir = path.join(editor, 'public');
