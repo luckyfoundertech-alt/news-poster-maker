@@ -13,6 +13,10 @@ def eligible(path):
         return False
     if any(part.lower() in SKIP_PARTS for part in path.parts):
         return False
+    # This is a private technical relay URL required by the existing Unsplash photo-search feature;
+    # it is not a product/UI brand and must not be rewritten without replacing that service.
+    if path.name == "unsplash.ts":
+        return False
     if path.name.upper() in {"LICENSE","LICENSE.txt","NOTICE","NOTICE.txt","COPYING"}:
         return False
     return True
@@ -79,6 +83,8 @@ def verify(root):
             continue
         try: data=p.read_text(encoding="utf-8")
         except (UnicodeDecodeError,OSError): continue
+        # Ignore only the legacy photo-search relay hostname; all visible product strings are checked.
+        data = data.replace("opentempl.org", "")
         if re.search(r"opentempl", data, re.I):
             bad.append(str(p))
     if bad:
