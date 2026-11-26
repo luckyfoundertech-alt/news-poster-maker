@@ -436,6 +436,8 @@ jobs:
         run: python3 scripts/patch_final_brand_mobile.py apply
       - name: Apply unified Canva-inspired NEWS Studio UI system
         run: python3 scripts/patch_canva_ui_system.py
+      - name: Add richer Indian layouts, district topics and Hindi/English search aliases
+        run: python3 scripts/patch_indian_template_library.py
       - name: Generate 3000+ editable Indian templates and Hindi search metadata
         run: node scripts/generate_indian_templates.mjs
       - name: Build all template packs and searchable index
