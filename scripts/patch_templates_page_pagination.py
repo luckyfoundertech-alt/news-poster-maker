@@ -1,6 +1,13 @@
 from pathlib import Path
 p=Path("opentempl/apps/editor/src/home/TemplatesPage.tsx")
 s=p.read_text(encoding="utf-8")
+old_categories = "const quickCategories = ['All','Breaking News','Editorial','Social Stories','Sports','Business','Infographics','Quotes','YouTube Banners'];"
+new_categories = "const quickCategories = ['All','Indian News','State & District','Politics & Public','Cricket & Sports','Business & Education','Indian Festivals','National & Culture','Breaking News','Editorial','Social Stories','Sports','Business','Infographics','Quotes','YouTube Banners'];"
+if old_categories in s:
+    s = s.replace(old_categories, new_categories, 1)
+elif new_categories not in s:
+    raise SystemExit("Template category filter list missing.")
+
 if "const [limit,setLimit]=useState(80);" not in s:
     marker=" const [loading,setLoading]=useState(true);"
     if marker not in s: raise SystemExit("TemplatesPage loading state missing")
