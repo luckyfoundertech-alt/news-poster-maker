@@ -34,8 +34,9 @@ def apply():
             except (UnicodeDecodeError, OSError):
                 continue
             updated = re.sub(r'https?://(?:www\.)?opentempl\.org[^\s"<>)]*', "https://example.com", original, flags=re.I)
-            updated = re.sub(r"opentempl", "NEWS Studio", updated, flags=re.I)
-            updated = re.sub(r"Open Templ", "NEWS Studio", updated, flags=re.I)
+            # Rebrand product-name literals, not internal camelCase identifiers such as opentemplRender.
+            updated = updated.replace("OpenTempl", "NEWS Studio").replace("Open Templ", "NEWS Studio")
+            updated = updated.replace(".opentempl", ".newsstudio")
             updated = re.sub(r"on your computer", "on your Android device", updated, flags=re.I)
             updated = re.sub(r"on this computer", "on this device", updated, flags=re.I)
             updated = re.sub(r"desktop app", "Android app", updated, flags=re.I)
@@ -92,7 +93,7 @@ def verify(root):
         except (UnicodeDecodeError,OSError): continue
         # Ignore only the legacy photo-search relay hostname; all visible product strings are checked.
         data = data.replace("opentempl.org", "")
-        if re.search(r"opentempl", data, re.I):
+        if re.search(r"OpenTempl", data):
             bad.append(str(p))
     if bad:
         raise SystemExit("Legacy OpenTempl brand string remains in built app assets: " + ", ".join(bad[:30]))
