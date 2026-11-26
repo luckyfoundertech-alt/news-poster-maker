@@ -46,6 +46,7 @@ const aliasesByGroup = {
  'national-culture':['independence day','republic day','gandhi jayanti','constitution day','tiranga','bharat mata','desh bhakti','national festival','भारतीय विरासत']
 };
 """
+extra = extra.replace("weight:900", "weight:800")
 s = s.replace(marker, extra + "\n" + marker, 1)
 old_tags = "const tags = [...new Set([...g.tags, topic[0].toLowerCase(), topic[1], g.name.toLowerCase(), title.toLowerCase(), hindi, g.en[i % g.en.length].toLowerCase(), g.hi[(i + Math.floor(i/5)) % g.hi.length], f.id, ['red bulletin','editorial grid','photo story','modern hindi','regional poster'][li%5]])];"
 new_tags = "const tags = [...new Set([...g.tags, ...(aliasesByGroup[g.key] || []), topic[0].toLowerCase(), topic[1], g.name.toLowerCase(), title.toLowerCase(), hindi, g.en[i % g.en.length].toLowerCase(), g.hi[(i + Math.floor(i/5)) % g.hi.length], f.id, styleNames[li % styleNames.length].toLowerCase()])];"
