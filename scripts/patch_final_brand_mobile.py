@@ -74,6 +74,13 @@ button,a,input,select,textarea{touch-action:manipulation}
 }
 """, encoding="utf-8")
     changed.append(str(css))
+    entry = SRC / "main.tsx"
+    if not entry.exists():
+        raise SystemExit("Android editor entry point main.tsx is missing.")
+    entry_text = entry.read_text(encoding="utf-8")
+    if "mobile-compat.css" not in entry_text:
+        entry.write_text("import './mobile-compat.css';\n" + entry_text, encoding="utf-8")
+        changed.append(str(entry) + " (mobile stylesheet import)")
     print("NEWS Studio final branding/mobile compatibility applied; changed", len(changed), "files.")
 
 def verify(root):
