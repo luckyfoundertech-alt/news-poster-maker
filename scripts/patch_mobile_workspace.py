@@ -4,9 +4,9 @@ root = Path("opentempl/apps/editor/src")
 home = root / "home/Home.tsx"
 s = home.read_text(encoding="utf-8")
 
-# Preserve all existing editor destinations and features; add unified search and section navigation.
+# Preserve all editor destinations and features; add unified search and mobile section navigation.
 if 'className="ns-global-search"' not in s:
-    anchor = """        <a className="home-brand" href="#/" aria-label="NEWS Studio home">
+    anchor = """        <a className="home-brand" href="#/" aria-label="OpenTempl home">
           <Wordmark size={21} />
         </a>
         <nav className="home-nav">"""
@@ -23,18 +23,27 @@ if 'className="ns-global-search"' not in s:
         raise SystemExit("Home header insertion point not found; no changes applied.")
     s = s.replace(anchor, replacement, 1)
 
+s = s.replace("document.title = 'OpenTempl';", "document.title = 'NEWS Studio';", 1)
+s = s.replace('aria-label="OpenTempl home"', 'aria-label="NEWS Studio home"')
 s = s.replace("""          <button onClick={() => wallRef.current?.scrollIntoView({ behavior: 'smooth' })}>Templates</button>
+          <a href="#/generate">Generate</a>
+          {DESKTOP_LINK ? <a href="/download">Desktop app</a> : null}
           <button onClick={() => document.getElementById('your-designs')?.scrollIntoView({ behavior: 'smooth' })}>Your designs</button>""",
 """          <button onClick={() => document.getElementById('news-feed')?.scrollIntoView({ behavior: 'smooth' })}>Newsroom</button>
           <button onClick={() => document.getElementById('your-designs')?.scrollIntoView({ behavior: 'smooth' })}>My designs</button>
           <button onClick={() => wallRef.current?.scrollIntoView({ behavior: 'smooth' })}>Templates</button>""", 1)
 s = s.replace("""            <button onClick={() => wallRef.current?.scrollIntoView({ behavior: 'smooth' })}>Templates</button>
+            <a href="#/generate">Generate</a>
             <button onClick={() => document.getElementById('your-designs')?.scrollIntoView({ behavior: 'smooth' })}>Your designs</button>""",
 """            <button onClick={() => document.getElementById('news-feed')?.scrollIntoView({ behavior: 'smooth' })}>Newsroom</button>
             <button onClick={() => document.getElementById('your-designs')?.scrollIntoView({ behavior: 'smooth' })}>My designs</button>
             <button onClick={() => wallRef.current?.scrollIntoView({ behavior: 'smooth' })}>Templates</button>""", 1)
 
-s = s.replace("<NewsFeed />", '<div id="news-feed"><NewsFeed query={tq} /></div>', 1)
+# NewsFeed is inserted by the preceding RSS integration step in the Android workflow.
+if "<NewsFeed />" in s:
+    s = s.replace("<NewsFeed />", '<div id="news-feed"><NewsFeed query={tq} /></div>', 1)
+elif "NewsFeed query={tq}" not in s:
+    raise SystemExit("RSS NewsFeed component is missing before mobile workspace patch.")
 s = s.replace('<section className="home-section" ref={wallRef}>', '<section className="home-section" id="template-library" ref={wallRef}>', 1)
 s = s.replace("<h2>Your designs</h2>", "<h2>My designs</h2>", 1)
 s = s.replace('placeholder="Search your designs"', 'placeholder="Filter your saved designs"', 1)
@@ -96,4 +105,4 @@ t = t.replace("document.title = 'Start a design · OpenTempl';", "document.title
 t = t.replace('aria-label="OpenTempl home"', 'aria-label="NEWS Studio home"')
 start.write_text(t, encoding="utf-8")
 
-print("NEWS Studio workspace navigation, unified search, searchable newsroom and responsive layout patched.")
+print("NEWS Studio mobile workspace navigation, unified search and responsive layout patched.")
