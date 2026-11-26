@@ -65,12 +65,23 @@ try {
               window.location.hash = nextHash;
             }, hash);
           }
-          await page.waitForSelector('body[data-ready="yes"]',{timeout:12000});
+          await page.waitForFunction(() => window.location.hash.startsWith('#/render'), { timeout: 12000 });
+          await page.waitForFunction(() => document.body.hasAttribute('data-ready'), { timeout: 12000 });
+          const renderState = await page.evaluate(() => ({
+            ready: document.body.getAttribute('data-ready'),
+            hash: window.location.hash,
+            text: document.body.innerText.slice(0, 400),
+          }));
+          if (renderState.ready !== 'yes') throw new Error('Renderer state '+renderState.ready+': '+renderState.hash+' | '+renderState.text);
           const stage=await page.$('.render-page');
           if(!stage) throw new Error('render page element missing');
           await stage.screenshot({path:out,type:'jpeg',quality:72});
           success=true;
-        } catch(e) { lastError=e?.message||String(e); }
+        } catch(e) {
+          let state = '';
+          try { state = JSON.stringify(await page.evaluate(() => ({ hash: location.hash, ready: document.body.getAttribute('data-ready'), text: document.body.innerText.slice(0,400) }))); } catch {}
+          lastError = (e?.message || String(e)) + (state ? ' | ' + state : '');
+        }
       }
       if(!success) failures.push(t.id+': '+lastError);
       done++;
