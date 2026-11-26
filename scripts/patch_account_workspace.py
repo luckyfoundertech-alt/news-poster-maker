@@ -60,6 +60,24 @@ if old_delete in s:
     s = s.replace(anchor, replacement, 1)
 elif "if (uid) void deleteDesignCloud(uid, id)" not in s:
     raise SystemExit("Could not safely convert cloud design deletion to background work.")
+# Thumbnail rendering is non-critical: save the design index first and render previews in the background.
+thumb_old = """  try {
+    const first = doc.snapshot.pageOrder[0];
+    if (first) await db.set('thumbs', m.id, await thumbnail(doc, doc.toSnapshot(), first));
+  } catch {
+    /* thumbnails are best effort */
+  }
+  notify();"""
+thumb_new = """  notify();
+  const first = doc.snapshot.pageOrder[0];
+  if (first) void thumbnail(doc, doc.toSnapshot(), first)
+    .then((preview) => db.set('thumbs', m.id, preview))
+    .catch(() => undefined);"""
+if thumb_old in s:
+    s = s.replace(thumb_old, thumb_new, 1)
+elif "const first = doc.snapshot.pageOrder[0];" not in s:
+    raise SystemExit("Design thumbnail block not found.")
+
 designs.write_text(s, encoding="utf-8")
 
 cloud = root / "auth/cloud.ts"
@@ -112,7 +130,7 @@ replacement = """export function AuthGate({ children }: { children: ReactNode })
       setSyncing(true);
       const results=await Promise.allSettled([restoreCloudDesigns(current.uid),restoreCloudUploads(current.uid)]);
       results.forEach((result)=>{if(result.status==='rejected')console.error('Background cloud restore failed',result.reason);});
-      if(live)setSyncing(false);
+      if(live){setSyncing(false);window.dispatchEvent(new Event('news-cloud-restored'));}
      } else if(live) setSyncing(false);
     } catch(e) {
      console.error('Workspace initialization failed',e);
