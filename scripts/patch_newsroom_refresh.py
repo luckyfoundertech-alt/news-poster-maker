@@ -92,6 +92,7 @@ export function NewsFeed() {
     controllerRef.current = controller;
     setBusy(true);
     setErrors([]);
+    const timeoutId = window.setTimeout(() => controller.abort(), 18000);
     try {
       const results = await Promise.allSettled(FEEDS.map(feed => fetchFeed(feed, controller.signal)));
       const fresh: NewsItem[] = [];
@@ -118,6 +119,8 @@ export function NewsFeed() {
     } catch (error) {
       setErrors([((error as Error)?.message || 'News refresh failed')]);
     } finally {
+      window.clearTimeout(timeoutId);
+      if (controllerRef.current === controller) controllerRef.current = null;
       busyRef.current = false;
       setBusy(false);
     }
