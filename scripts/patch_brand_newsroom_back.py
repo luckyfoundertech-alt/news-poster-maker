@@ -128,6 +128,7 @@ function installAndroidBackNavigation() {
       else window.location.hash = '#/';
       return;
     }
+    exitApp?.();
   };
   window.addEventListener('keydown', (event) => {
     if (event.key === 'Escape' && event.defaultPrevented) return;
