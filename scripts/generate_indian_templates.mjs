@@ -90,13 +90,13 @@ for (const g of groups) {
     const W=f.w,H=f.h;
     const li = (i * 7 + Math.floor(i/11)) % layouts.length;
     const topic = g.topics[i % g.topics.length];
-    const title = topic[0] + ' · ' + g.en[i % g.en.length];
-    const hindi = topic[1] + ' · ' + g.hi[(i + Math.floor(i/5)) % g.hi.length];
+    const title = topic[0];
+    const hindi = topic[1];
     const elements = layouts[li](W,H,c,pi,{en:title,hi:hindi});
     // Unique editorial issue marker and an editable source/date line on every layout.
     const markY = Math.min(H*.94,H-42);
     elements.push(T(String(i+1).padStart(3,'0'),W*.86,markY,W*.09,{size:Math.max(15,W*.018),weight:800,color:c[2],align:'right'}));
-    const tags = [...new Set([...g.tags, topic[0].toLowerCase(), topic[1], g.name.toLowerCase(), title.toLowerCase(), hindi, f.id, ['red bulletin','editorial grid','photo story','modern hindi','regional poster'][li%5]])];
+    const tags = [...new Set([...g.tags, topic[0].toLowerCase(), topic[1], g.name.toLowerCase(), title.toLowerCase(), hindi, g.en[i % g.en.length].toLowerCase(), g.hi[(i + Math.floor(i/5)) % g.hi.length], f.id, ['red bulletin','editorial grid','photo story','modern hindi','regional poster'][li%5]])];
     templates.push(tpl({
       id:`${g.key}-${String(i+1).padStart(3,'0')}`,
       name:`${topic[0]} ${String(i+1).padStart(3,'0')} · ${['Bold Bulletin','Editorial Grid','Photo Story','Modern Hindi','Regional Press'][li%5]}`,
