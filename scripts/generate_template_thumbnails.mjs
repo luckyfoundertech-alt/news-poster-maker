@@ -17,7 +17,9 @@ const templates = index.templates.filter(t => wanted.has(t.vibe));
 if (templates.length < 3000) throw new Error('Expected 3000 Indian templates before thumbnail rendering; found '+templates.length);
 const thumbDir = path.join(publicDir, 'templates/thumbs');
 fs.mkdirSync(thumbDir, { recursive: true });
-const missing = templates.filter(t => !fs.existsSync(path.join(thumbDir, t.id+'.jpg')));
+const allMissing = templates.filter(t => !fs.existsSync(path.join(thumbDir, t.id+'.jpg')));
+const limit = Number(process.env.THUMBNAIL_LIMIT || 0);
+const missing = limit > 0 ? allMissing.slice(0, limit) : allMissing;
 console.log('Rendering '+missing.length+' missing Indian template previews (of '+templates.length+').');
 if (!missing.length) process.exit(0);
 
@@ -38,7 +40,8 @@ try {
   });
   const workers = 3;
   const pages = await Promise.all(Array.from({length:workers},()=>browser.newPage()));
-  for(const page of pages) page.setDefaultTimeout(25000);
+  for(const page of pages) page.setDefaultTimeout(12000);
+  const initialized = new WeakSet();
   let cursor=0, done=0;
   const failures=[];
   async function worker(page) {
@@ -52,9 +55,17 @@ try {
         try {
           const scale=480/t.width;
           const url='http://127.0.0.1:5181/#/render?vibe='+encodeURIComponent(t.vibe)+'&id='+encodeURIComponent(t.id)+'&scale='+scale;
-          await page.goto('about:blank');
-          await page.goto(url,{waitUntil:'domcontentloaded',timeout:30000});
-          await page.waitForSelector('body[data-ready="yes"]',{timeout:25000});
+          const hash = url.slice('http://127.0.0.1:5181/'.length);
+          if (!initialized.has(page)) {
+            await page.goto(url,{waitUntil:'domcontentloaded',timeout:20000});
+            initialized.add(page);
+          } else {
+            await page.evaluate((nextHash) => {
+              document.body.removeAttribute('data-ready');
+              window.location.hash = nextHash;
+            }, hash);
+          }
+          await page.waitForSelector('body[data-ready="yes"]',{timeout:12000});
           const stage=await page.$('.render-page');
           if(!stage) throw new Error('render page element missing');
           await stage.screenshot({path:out,type:'jpeg',quality:72});
@@ -72,9 +83,10 @@ try {
     console.error(failures.slice(0,30).join('\n'));
     throw new Error(failures.length+' template preview(s) failed to render.');
   }
-  const absent=templates.filter(t=>!fs.existsSync(path.join(thumbDir,t.id+'.jpg')));
+  const verifySet = limit > 0 ? missing : templates;
+  const absent=verifySet.filter(t=>!fs.existsSync(path.join(thumbDir,t.id+'.jpg')));
   if(absent.length) throw new Error(absent.length+' template preview files are missing after render.');
-  console.log('Verified '+templates.length+' Indian template preview thumbnails.');
+  console.log('Verified '+verifySet.length+' Indian template preview thumbnails.');
 } finally {
   if(browser) await browser.close().catch(()=>{});
   server.kill('SIGTERM');
