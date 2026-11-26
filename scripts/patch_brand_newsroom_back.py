@@ -140,4 +140,31 @@ if 'href="#/newsroom"' not in h:
     raise SystemExit("Newsroom navigation link was not added.")
 app.write_text(s, encoding="utf-8")
 
+# Android app metadata and legacy desktop/computer copy cleanup.
+editor_html = Path("opentempl/apps/editor/index.html")
+if editor_html.exists():
+    page = editor_html.read_text(encoding="utf-8")
+    page = re.sub(r"<title>.*?</title>", "<title>NEWS Studio</title>", page, flags=re.I|re.S)
+    if 'name="description"' in page:
+        page = re.sub(r'<meta name="description" content="[^"]*"', '<meta name="description" content="NEWS Studio — professional poster and news graphic design on Android."', page, flags=re.I)
+    page = page.replace("</head>", '<link rel="icon" type="image/webp" href="/news-studio-logo.webp"></head>')
+    editor_html.write_text(page, encoding="utf-8")
+
+for folder in [root, public]:
+    if not folder.exists(): continue
+    for p in folder.rglob("*"):
+        if not p.is_file() or p.suffix.lower() not in {".ts",".tsx",".js",".jsx",".html",".css"}: continue
+        try: t = p.read_text(encoding="utf-8")
+        except Exception: continue
+        original = t
+        t = re.sub(r"on your computer", "on your Android device", t, flags=re.I)
+        t = re.sub(r"stays on this computer", "stays in your NEWS Studio account", t, flags=re.I)
+        t = re.sub(r"Desktop app for Mac, Windows and Linux", "", t, flags=re.I)
+        t = re.sub(r"Desktop app", "Android app", t, flags=re.I)
+        t = re.sub(r"desktop version", "Android version", t, flags=re.I)
+        t = t.replace(".opentempl,.tavla,.pdf,.pptx", ".newsstudio,.pdf,.pptx")
+        t = t.replace(".opentempl,.tavla", ".newsstudio")
+        t = t.replace("opentempl|tavla", "newsstudio")
+        if t != original: p.write_text(t, encoding="utf-8")
+
 print("NEWS Studio branding cleanup, dedicated RSS Newsroom route, and Android back handler patched.")
