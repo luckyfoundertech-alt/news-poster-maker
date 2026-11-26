@@ -558,9 +558,46 @@ jobs:
           PY
       - name: Sync full editor into Android
         run: npx cap sync android
+      - name: Configure resilient Maven Central mirror for Android dependencies
+        working-directory: android
+        run: |
+          mkdir -p "$HOME/.gradle/init.d"
+          cat > "$HOME/.gradle/init.d/00-maven-central-mirror.gradle" <<'GRADLE'
+          allprojects {
+            repositories {
+              maven {
+                name = "GoogleCloudMavenCentralMirror"
+                url = uri("https://maven-central-asia.storage-download.googleapis.com/maven2/")
+              }
+            }
+          }
+          GRADLE
+          # Confirm the mirror can serve a real Android build dependency before Gradle starts.
+          python3 - <<'PY'
+          import urllib.request
+          url = "https://maven-central-asia.storage-download.googleapis.com/maven2/org/jetbrains/kotlin/kotlin-reflect/1.9.20/kotlin-reflect-1.9.20.pom"
+          request = urllib.request.Request(url, headers={"User-Agent": "NEWS-Studio-Android-Build/1.0"})
+          with urllib.request.urlopen(request, timeout=30) as response:
+              if response.status != 200:
+                  raise SystemExit(f"Maven mirror health check failed: HTTP {response.status}")
+              print(f"Maven mirror health check passed: HTTP {response.status}, {response.headers.get('Content-Length', 'unknown')} bytes")
+          PY
       - name: Build installable debug APK
         working-directory: android
-        run: ./gradlew assembleDebug
+        run: |
+          set -o pipefail
+          attempt=1
+          max_attempts=3
+          until ./gradlew --no-daemon --max-workers=2 assembleDebug; do
+            if [ "$attempt" -ge "$max_attempts" ]; then
+              echo "Android debug APK build failed after $max_attempts attempts."
+              exit 1
+            fi
+            delay=$((attempt * 20))
+            echo "Gradle build attempt $attempt failed; retrying after ${delay}s with dependency cache retained."
+            sleep "$delay"
+            attempt=$((attempt + 1))
+          done
       - name: Build signed production APK and AAB when release secrets are configured
         if: ${{ env.ANDROID_KEYSTORE_BASE64 != '' && env.ANDROID_KEY_ALIAS != '' && env.ANDROID_KEYSTORE_PASSWORD != '' && env.ANDROID_KEY_PASSWORD != '' }}
         env:
