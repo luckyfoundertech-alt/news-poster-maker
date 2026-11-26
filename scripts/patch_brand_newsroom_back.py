@@ -1,7 +1,24 @@
 from pathlib import Path
-import re, json
+import re, json, base64
 
 root = Path("opentempl/apps/editor/src")
+public = Path("opentempl/apps/editor/public")
+public.mkdir(parents=True, exist_ok=True)
+logo_b64 = Path("scripts/news-studio-logo.webp.b64")
+if not logo_b64.exists():
+    raise SystemExit("Supplied NEWS Studio logo source is missing.")
+(public / "news-studio-logo.webp").write_bytes(base64.b64decode(logo_b64.read_text().strip()))
+logo = root / "ui/Logo.tsx"
+logo.write_text("""export function Mark({ size = 28 }: { size?: number }) {
+  return <img src={import.meta.env.BASE_URL + 'news-studio-logo.webp'} width={size} height={size} alt="NEWS Studio" draggable={false} style={{ display: 'block', flex: 'none', objectFit: 'contain' }} />;
+}
+export function Wordmark({ size = 22 }: { size?: number }) {
+  return <span style={{ display: 'inline-flex', alignItems: 'center', gap: size * 0.4, fontWeight: 700, fontSize: size, letterSpacing: '-0.045em' }}><Mark size={size * 1.25} />NEWS Studio</span>;
+}
+export function Sign({ size = 40 }: { size?: number; mood?: string }) {
+  return <Mark size={size} />;
+}
+""", encoding="utf-8")
 app = root / "App.tsx"
 s = app.read_text(encoding="utf-8")
 
