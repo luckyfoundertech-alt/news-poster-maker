@@ -51,8 +51,8 @@ old_tags = "const tags = [...new Set([...g.tags, topic[0].toLowerCase(), topic[1
 new_tags = "const tags = [...new Set([...g.tags, ...(aliasesByGroup[g.key] || []), topic[0].toLowerCase(), topic[1], g.name.toLowerCase(), title.toLowerCase(), hindi, g.en[i % g.en.length].toLowerCase(), g.hi[(i + Math.floor(i/5)) % g.hi.length], f.id, styleNames[li % styleNames.length].toLowerCase()])];"
 if old_tags not in s: raise SystemExit("tag generation line missing")
 s = s.replace(old_tags, new_tags, 1)
-old_name = "name:\u0060${topic[0]} ${String(i+1).padStart(3,'0')} · ${['Bold Bulletin','Editorial Grid','Photo Story','Modern Hindi','Regional Press'][li%5]}\u0060,"
-new_name = "name:\u0060${topic[0]} ${String(i+1).padStart(3,'0')} · ${styleNames[li % styleNames.length]}\u0060,"
+old_name = "name:" + chr(96) + "$" + "{topic[0]} " + "$" + "{String(i+1).padStart(3,'0')} · " + "$" + "{['Bold Bulletin','Editorial Grid','Photo Story','Modern Hindi','Regional Press'][li%5]}" + chr(96) + ","
+new_name = "name:" + chr(96) + "$" + "{topic[0]} " + "$" + "{String(i+1).padStart(3,'0')} · " + "$" + "{styleNames[li % styleNames.length]}" + chr(96) + ","
 if old_name not in s: raise SystemExit("template name line missing")
 s = s.replace(old_name, new_name, 1)
 p.write_text(s, encoding="utf-8")
