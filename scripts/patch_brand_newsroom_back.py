@@ -301,6 +301,10 @@ for p in root.rglob("*"):
     try: t = p.read_text(encoding="utf-8")
     except Exception: continue
     updated = t.replace("OpenTempl", "NEWS Studio")
+    # Replace old brand URLs in sample artwork/QR presets. Keep the photo-search
+    # relay endpoint in panels/unsplash.ts because the existing photo feature uses it.
+    if p != root / "panels/unsplash.ts":
+        updated = updated.replace("opentempl.org", "example.com")
     updated = updated.replace("on this computer", "on this device").replace("on your computer", "on your Android device")
     updated = updated.replace("Desktop app for Mac, Windows and Linux", "")
     if updated != t: p.write_text(updated, encoding="utf-8")
