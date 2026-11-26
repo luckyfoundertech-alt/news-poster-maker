@@ -82,8 +82,8 @@ h = re.sub(r'\s*<div id="news-feed"><NewsFeed query=\{tq\} /></div>', "", h)
 h = re.sub(r'\s*<NewsFeed(?: query=\{tq\})?\s*/>', "", h)
 h = h.replace("import { NewsFeed } from './NewsFeed';\n", "")
 if 'href="#/newsroom"' not in h:
-    h = h.replace('<nav className="home-nav">', '<nav className="home-nav">\\n          <a href="#/newsroom">Newsroom</a>', 1)
-    h = h.replace('<nav className="home-sheet" onClick={() => setMenu(false)}>', '<nav className="home-sheet" onClick={() => setMenu(false)}>\\n            <a href="#/newsroom">Newsroom</a>', 1)
+    h = h.replace('<nav className="home-nav">', '<nav className="home-nav">\n          <a href="#/newsroom">Newsroom</a>', 1)
+    h = h.replace('<nav className="home-sheet" onClick={() => setMenu(false)}>', '<nav className="home-sheet" onClick={() => setMenu(false)}>\n            <a href="#/newsroom">Newsroom</a>', 1)
 home.write_text(h, encoding="utf-8")
 
 # Rebrand all visible source/UI strings while preserving legal and dependency notices.
