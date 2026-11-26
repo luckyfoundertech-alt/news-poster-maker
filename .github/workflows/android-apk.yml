@@ -490,6 +490,10 @@ jobs:
           npm install @capacitor/app@^7.0.1 @capacitor/filesystem@^7.1.4 @capacitor/share@^7.0.2 --no-fund
       - name: Generate Android project
         run: npx cap add android
+      - name: Apply NEWS Studio launcher icon
+        run: |
+          python3 -m pip install --quiet Pillow
+          python3 scripts/patch_android_launcher_icon.py
       - name: Configure Firebase Android SDK
         run: |
           cp google-services.json android/app/google-services.json
