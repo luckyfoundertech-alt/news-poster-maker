@@ -184,7 +184,7 @@ import { FirebaseAuthentication } from '@capacitor-firebase/authentication';
 import { auth, authReady } from './firebase';
 import { restoreCloudDesigns, restoreCloudUploads } from './cloud';
 
-const LOGO = 'https://lh3.googleusercontent.com/aida-public/AB6AXuCmTmy3ETuD5atbGZG4-BP8X4yyDmE5Cd7G-Qu6bEWxcDhhKge-1zvwk3aAtl4tSF2R0kVPFkTFZYkRRvuKDgnXwKzr8jbo0KDpTD1GMZy5kq2Ib9fjBS79SpwcVeV1Id6uC3oJjxoUorjO4qS6vKIbyqw_JVqUiNA3kapyO_-oCdhEPjgQzU1O-VqMXv0Zh0qWk4RzsCFimnQ1Z6uacLqVxTf-8V51vxqtaoTmJTngDWcnyl7EnIDzMQ';
+const LOGO = import.meta.env.BASE_URL + 'news-studio-logo.webp';
 const CSS = `
 .ns-auth{height:100dvh;min-height:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;background:#fff;color:#0f172a;font-family:'Plus Jakarta Sans',Inter,system-ui,sans-serif;display:flex;flex-direction:column;align-items:center;padding:env(safe-area-inset-top,8px) 20px env(safe-area-inset-bottom,12px);box-sizing:border-box}
 .ns-auth *{box-sizing:border-box}.ns-auth button,.ns-auth input{font:inherit}.ns-status{width:100%;max-width:420px;height:28px;display:flex;justify-content:space-between;align-items:center;font-size:12px;font-weight:700;color:#334155}
@@ -208,8 +208,8 @@ function AuthScreen(){
  return <div className='ns-auth'><style>{CSS}</style><div className='ns-status'><span>NEWS Studio</span><span>● ● ●</span></div><div className='ns-wrap'>
  {page==='welcome'?<>
   <div className='ns-brand'><img className='ns-logo' src={LOGO} alt='NEWS Studio app icon'/><div className='ns-status-pill'>● CREATOR ACCESS</div><h1 className='ns-title'>NEWS <span style={{color:'#2563eb'}}>Studio</span></h1><p className='ns-sub'>Mobile editorial powerhouse for breaking news flyers, posters &amp; stories</p>
-   <div className='ns-badges'><span className='ns-badge'>✦ 337+ Layouts</span><span className='ns-badge red'>◉ Live Feeds</span><span className='ns-badge'>✓ 4K Export</span></div></div>
-  <div className='ns-hero'><div style={{display:'flex',justifyContent:'space-between',fontSize:11,fontWeight:800,color:'#64748b'}}><span>▣ EDITORIAL ENGINE</span><span style={{color:'#dc2626'}}>● LIVE</span></div><h2>Design Breaking News Posters in Seconds</h2><div className='ns-preview'><img src={LOGO} alt='NEWS Studio'/><div style={{minWidth:0}}><b style={{fontSize:13}}>Your next newsroom design starts here</b><div style={{fontSize:11,color:'#64748b',marginTop:4}}>Templates · Layers · Professional export</div></div></div><div className='ns-stats'><div className='ns-stat'><b>337+</b>Ready-made layouts</div><div className='ns-stat'><b>4K</b>High-resolution export</div></div></div>
+   <div className='ns-badges'><span className='ns-badge'>✦ 3,337+ Layouts</span><span className='ns-badge red'>◉ Live Feeds</span><span className='ns-badge'>✓ 4K Export</span></div></div>
+  <div className='ns-hero'><div style={{display:'flex',justifyContent:'space-between',fontSize:11,fontWeight:800,color:'#64748b'}}><span>▣ EDITORIAL ENGINE</span><span style={{color:'#dc2626'}}>● LIVE</span></div><h2>Design Breaking News Posters in Seconds</h2><div className='ns-preview'><img src={LOGO} alt='NEWS Studio'/><div style={{minWidth:0}}><b style={{fontSize:13}}>Your next newsroom design starts here</b><div style={{fontSize:11,color:'#64748b',marginTop:4}}>Templates · Layers · Professional export</div></div></div><div className='ns-stats'><div className='ns-stat'><b>3,337+</b>Ready-made layouts</div><div className='ns-stat'><b>4K</b>High-resolution export</div></div></div>
   <div className='ns-actions'><button className='ns-btn ns-primary' onClick={()=>switchPage('signup')}>Get Started / Create Account <span>→</span></button><button className='ns-btn' onClick={()=>switchPage('login')}>↪ I Already Have an Account</button><button className='ns-btn ns-google' disabled={busy} onClick={runGoogle}><GoogleMark/>Continue with Google</button></div>
   <div className='ns-footer'>By continuing you accept our Terms of Service and Privacy Policy.</div>
  </>:<>
@@ -225,7 +225,7 @@ function AuthScreen(){
    <button className='ns-btn ns-primary' disabled={busy}>{busy?'Please wait…':page==='signup'?'Create Studio Account':page==='reset'?'Send Reset Link':'Sign In to Studio'} <span>→</span></button>
    {page!=='reset'?<><div className='ns-divider'>OR CONTINUE WITH</div><button type='button' className='ns-btn ns-google' disabled={busy} onClick={runGoogle}><GoogleMark/>{page==='signup'?'Sign up with Google':'Continue with Google'}</button></>:null}
   </form>
-  <div className='ns-banner'><div className='ns-banner-icon'>▣</div><div><b style={{display:'block',fontSize:12,color:'#1e293b'}}>337+ Live Templates Ready</b><span style={{fontSize:11,color:'#64748b'}}>Breaking banners, reels &amp; editorial tiles</span></div></div>
+  <div className='ns-banner'><div className='ns-banner-icon'>▣</div><div><b style={{display:'block',fontSize:12,color:'#1e293b'}}>3,337+ Live Templates Ready</b><span style={{fontSize:11,color:'#64748b'}}>Breaking banners, reels &amp; editorial tiles</span></div></div>
   <div className='ns-footer'>{page==='signup'?<>Already have an account? <button className='ns-link' onClick={()=>switchPage('login')}>Sign In</button></>:page==='reset'?<button className='ns-link' onClick={()=>switchPage('login')}>Back to Sign In</button>:<>Don't have a studio account? <button className='ns-link' onClick={()=>switchPage('signup')}>Create account</button></>}</div>
  </>}
  </div></div>;
