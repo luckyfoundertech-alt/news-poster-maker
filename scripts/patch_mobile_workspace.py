@@ -116,6 +116,7 @@ app.write_text(body, encoding="utf-8")
 # Move sign-out into Profile; remove the floating bottom-right account control.
 gate = root / "auth/AuthGate.tsx"
 body = gate.read_text(encoding="utf-8")
+body = body.replace(", signOut", "")
 body = re.sub(r"<button onClick=\{\(\)=>signOut\(auth\)\} title='Sign out'.*?</button>", "", body)
 gate.write_text(body, encoding="utf-8")
 
