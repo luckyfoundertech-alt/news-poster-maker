@@ -10,6 +10,8 @@ if "import { auth } from '../auth/firebase';" not in s:
     s = s.replace("import { Wordmark } from '../ui/Logo';", "import { Wordmark } from '../ui/Logo';\nimport { auth } from '../auth/firebase';", 1)
 # Strip all AI generation concepts from the home module; the app is intentionally non-AI.
 s = s.replace("import { loadLooks, sampleUrl, type Look } from '../generate/looks';\n", "")
+# Remove unused artwork generator from the retired AI/looks dashboard.
+s = re.sub(r"// Drawn in a 600 x 640 design space\\..*?// The template wall:", "// The template wall:", s, flags=re.S)
 s = s.replace("  const [looks, setLooks] = useState<Look[]>([]);\n", "")
 s = s.replace("    loadLooks().then(setLooks);\n", "")
 s = re.sub(r"\s*\{looks\.length \? \(.*?\n\s*\) : null\}\n", "\n", s, flags=re.S)
@@ -55,17 +57,17 @@ dashboard = """<section className="ns-dashboard">
           <form className="ns-main-search" role="search" onSubmit={(e)=>{e.preventDefault();setQ(tq);setTplFilter('All');wallRef.current?.scrollIntoView({behavior:'smooth'});}}>
             <Icon name="search" size={19}/><input value={tq} onChange={e=>{setTq(e.target.value);setQ(e.target.value);}} placeholder="Search templates and your designs…" aria-label="Search templates and designs"/>{tq?<button type="button" onClick={()=>{setTq('');setQ('');}}>×</button>:null}
           </form>
-          <div className="ns-section-label"><b>Quick Create</b><a href="#/start">Custom dimensions <Icon name="chevron-right" size={14}/></a></div>
+          <div className="ns-section-label"><b>Quick Create</b><a href="#/start">Custom dimensions <Icon name="forward" size={14}/></a></div>
           <div className="ns-quick-grid">
-            <button onClick={()=>navigate('/new?format=a3-poster')}><span className="ns-quick-icon blue"><Icon name="zap"/></span><b>Breaking Banner</b></button>
-            <button onClick={()=>navigate('/new?format=story')}><span className="ns-quick-icon violet"><Icon name="smartphone"/></span><b>News Story</b></button>
+            <button onClick={()=>navigate('/new?format=a3-poster')}><span className="ns-quick-icon blue"><Icon name="sparkle"/></span><b>Breaking Banner</b></button>
+            <button onClick={()=>navigate('/new?format=story')}><span className="ns-quick-icon violet"><Icon name="page"/></span><b>News Story</b></button>
             <button onClick={()=>navigate('/new?format=ig-post')}><span className="ns-quick-icon cyan"><Icon name="square"/></span><b>Square Post</b></button>
-            <button onClick={()=>navigate('/new?format=ig-post')}><span className="ns-quick-icon rose"><Icon name="quote"/></span><b>Quote Post</b></button>
-            <button onClick={()=>navigate('/new?format=a4')}><span className="ns-quick-icon amber"><Icon name="shield-check"/></span><b>Fact Check</b></button>
+            <button onClick={()=>navigate('/new?format=ig-post')}><span className="ns-quick-icon rose"><Icon name="text"/></span><b>Quote Post</b></button>
+            <button onClick={()=>navigate('/new?format=a4')}><span className="ns-quick-icon amber"><Icon name="star"/></span><b>Fact Check</b></button>
           </div>
           <div className="ns-feature-strip">
-            <a href="#/start"><span className="ns-feature-icon"><Icon name="palette"/></span><span><b>Brand & design tools</b><small>Fonts, colours, layers and layouts</small></span><Icon name="chevron-right"/></a>
-            <a href="#/projects"><span className="ns-feature-icon"><Icon name="folder"/></span><span><b>My Projects</b><small>{designs?.length ?? 0} saved designs in your workspace</small></span><Icon name="chevron-right"/></a>
+            <a href="#/start"><span className="ns-feature-icon"><Icon name="palette"/></span><span><b>Brand & design tools</b><small>Fonts, colours, layers and layouts</small></span><Icon name="forward"/></a>
+            <a href="#/projects"><span className="ns-feature-icon"><Icon name="folder"/></span><span><b>My Projects</b><small>{designs?.length ?? 0} saved designs in your workspace</small></span><Icon name="forward"/></a>
           </div>
         </section>
         """
@@ -83,8 +85,8 @@ bottom = """<nav className="ns-bottom-nav" aria-label="Main navigation">
         <a className="active" href="#/"><Icon name="home"/><span>Home</span></a>
         <a href="#/templates"><Icon name="grid"/><span>Templates</span></a>
         <a className="ns-bottom-create" href="#/start" aria-label="Create design"><Icon name="plus"/></a>
-        <a href="#/newsroom"><Icon name="newspaper"/><span>Newsroom</span></a>
-        <a href="#/profile"><Icon name="user"/><span>Profile</span></a>
+        <a href="#/newsroom"><Icon name="page"/><span>Newsroom</span></a>
+        <a href="#/profile"><Icon name="users"/><span>Profile</span></a>
       </nav>
       """
 if "className=\"ns-bottom-nav\"" not in s:
@@ -97,11 +99,12 @@ projects.write_text("""import { useEffect, useMemo, useState } from 'react';
 import { navigate } from '../App';
 import { auth } from '../auth/firebase';
 import { getThumb, listDesigns, onDesignsChange, type DesignEntry } from '../io/designs';
-import { listUploads, type UploadEntry } from '../io/uploads';
+import { listUploads } from '../io/uploads';
 import { Wordmark } from '../ui/Logo';
 import { Icon } from '../ui/icons';
 import './home.css';
 
+type UploadEntry = Awaited<ReturnType<typeof listUploads>>[number];
 export function Projects() {
  const [designs,setDesigns]=useState<DesignEntry[]>([]);
  const [uploads,setUploads]=useState<UploadEntry[]>([]);
