@@ -316,4 +316,16 @@ for rel in ["App.tsx", "editor/EditorScreen.tsx", "present/Presenter.tsx", "star
         t = p.read_text(encoding="utf-8").replace("OpenTempl", "NEWS Studio")
         p.write_text(t, encoding="utf-8")
 
+
+# Explicitly clean the few sample QR destinations from bundled starter templates/tools.
+# The Unsplash proxy URL remains an internal service endpoint, not displayed app branding.
+for rel in [
+    "templates/defs.ts", "templates/defs2.ts",
+    "chrome/CommandPalette.tsx", "panels/ToolsPanel.tsx", "panels/ElementsPanel.tsx"
+]:
+    p = root / rel
+    if p.exists():
+        t = p.read_text(encoding="utf-8").replace("https://opentempl.org", "https://example.com")
+        p.write_text(t, encoding="utf-8")
+
 print("NEWS Studio branding cleanup, dedicated RSS Newsroom route, and Android back handler patched.")
