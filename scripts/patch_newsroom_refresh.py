@@ -110,7 +110,8 @@ export function NewsFeed() {
         const tb = Date.parse(b.date) || 0;
         return tb - ta;
       }).slice(0, 80);
-      if (sorted.length) setItems(sorted);
+      const successfulSources = results.filter(result => result.status === 'fulfilled').length;
+      if (successfulSources > 0) setItems(sorted);
       else if (failed.length === FEEDS.length) throw new Error('All news sources failed. Check your connection and try again.');
       setErrors(failed);
       setLastRefreshed(Date.now());
