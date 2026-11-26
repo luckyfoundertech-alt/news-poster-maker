@@ -14,6 +14,16 @@ if "setTplLimit(80), [tplFilter, query]" not in s:
     if marker not in s: raise SystemExit("Template search query marker missing.")
     s = s.replace(marker, marker + "\n  useEffect(() => setTplLimit(80), [tplFilter, query]);", 1)
 s = s.replace('placeholder="A gig poster, a menu"', 'placeholder="Search Hindi or English templates…"')
+# The built-in Classics are stored separately from public template packs; include them in global search too.
+old_classics = "  const classics = tplFilter === 'classics' || (tplFilter === 'All' && !query) ? TEMPLATES : [];"
+new_classics = """  const classicMatches = TEMPLATES.filter((t) => !query || `${t.id} ${t.name} ${t.category}`.toLowerCase().includes(query));
+  const classics = tplFilter === 'classics' ? classicMatches : tplFilter === 'All' ? (query ? classicMatches : TEMPLATES) : [];"""
+if old_classics in s:
+    s = s.replace(old_classics, new_classics, 1)
+elif "const classicMatches = TEMPLATES.filter" not in s:
+    raise SystemExit("Classics search insertion point missing.")
+s = s.replace("{query && !packTpls.length ? <div className=\"home-empty\">", "{query && !packTpls.length && !classics.length ? <div className=\"home-empty\">", 1)
+
 old = '<Masonry items={tplFilter === \'classics\' ? [] : packTpls} vibes={index?.vibes ?? {}} />'
 new = """<Masonry items={tplFilter === 'classics' ? [] : packTpls.slice(0, tplLimit)} vibes={index?.vibes ?? {}} />
           {tplFilter !== 'classics' && packTpls.length > tplLimit ? (
