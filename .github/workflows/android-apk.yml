@@ -459,6 +459,9 @@ jobs:
           NODE
           npm install --no-fund
           npm install -w @opentempl/editor @capacitor/app@^7.0.1 @capacitor/core@^7.1.0 @capacitor/filesystem@^7.1.4 @capacitor/share@^7.0.2 firebase@^12.6.0 @capacitor-firebase/authentication@^7.2.0 --no-fund
+      - name: Render and verify all 3000 Indian template previews
+        working-directory: opentempl
+        run: node ../scripts/generate_template_thumbnails.mjs
           # Apply only non-breaking fixes. Never use npm audit fix --force in release builds.
           npm audit fix --no-fund || echo "::warning::npm audit fix could not resolve all advisories without breaking changes; continuing to compile and package APK."
           mkdir -p security-reports
@@ -508,7 +511,10 @@ jobs:
           missing = [t.get("id", "?") for t in templates if not t.get("vibe") or not (Path("www/templates") / f"{t.get('vibe')}.json").exists()]
           if missing:
               raise SystemExit(f"Template packs missing for: {', '.join(missing[:10])}")
-          print(f"Verified {len(templates)} unique templates across {len(vibes)} design styles.")
+          missing_thumbs = [t.get("id", "?") for t in indian if not (Path("www/templates/thumbs") / f"{t.get('id')}.jpg").exists()]
+          if missing_thumbs:
+              raise SystemExit(f"Missing {len(missing_thumbs)} Indian template preview thumbnails; first: {', '.join(missing_thumbs[:10])}")
+          print(f"Verified {len(templates)} unique templates across {len(vibes)} design styles, including {len(indian)} Indian templates with searchable metadata and thumbnails.")
           PY
       - name: Install Android shell dependencies and native export plugins
         run: |
