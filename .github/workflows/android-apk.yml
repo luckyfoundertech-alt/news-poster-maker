@@ -428,6 +428,8 @@ jobs:
         run: python3 scripts/patch_brand_newsroom_back.py
       - name: Apply reliable live Newsroom refresh across all configured feeds
         run: python3 scripts/patch_newsroom_refresh.py
+      - name: Optimize full searchable template gallery for Android performance
+        run: python3 scripts/patch_template_gallery.py
       - name: Apply Stitch-inspired Android Home, Projects and bottom navigation
         run: python3 scripts/patch_stitch_pages.py
       - name: Final NEWS Studio brand sweep and Android viewport compatibility
