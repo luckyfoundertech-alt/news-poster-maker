@@ -86,6 +86,28 @@ if 'href="#/newsroom"' not in h:
     h = h.replace('<nav className="home-sheet" onClick={() => setMenu(false)}>', '<nav className="home-sheet" onClick={() => setMenu(false)}>\n            <a href="#/newsroom">Newsroom</a>', 1)
 home.write_text(h, encoding="utf-8")
 
+# Remove remaining Electron-only bridge references from the Android entry point and metrics.
+main_file = root / "main.tsx"
+if main_file.exists():
+    m = main_file.read_text(encoding="utf-8")
+    m = m.replace(" && !('tavlaDesktop' in window)", "")
+    m = m.replace("not in the desktop app, which is offline already", "for Android app sessions")
+    main_file.write_text(m, encoding="utf-8")
+
+stats = root / "stats/client.ts"
+if stats.exists():
+    st = stats.read_text(encoding="utf-8")
+    st = re.sub(r"function platform\(\): Platform \{.*?\n\}", "function platform(): Platform { return 'web'; }", st, flags=re.S)
+    st = st.replace("'opentempl:install'", "'news-studio:install'")
+    st = st.replace("'opentempl:share-counts'", "'news-studio:share-counts'")
+    st = st.replace("'opentempl:pinged'", "'news-studio:pinged'")
+    st = st.replace("'opentempl:subscribed'", "'news-studio:subscribed'")
+    st = st.replace("'opentempl:export-note'", "'news-studio:export-note'")
+    # Old upstream telemetry is not part of NEWS Studio; keep the API inert.
+    st = st.replace("const BASE = (import.meta.env.VITE_STATS_URL as string | undefined) ?? 'https://opentempl-stats.opencursor.workers.dev';", "const BASE = '';")
+    st = st.replace("function allowed(): boolean {", "function allowed(): boolean {\n  return false;")
+    stats.write_text(st, encoding="utf-8")
+
 # Remove desktop bridge typing from photo search while preserving its configured proxy.
 unsplash = root / "panels/unsplash.ts"
 if unsplash.exists():
