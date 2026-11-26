@@ -54,9 +54,9 @@ if not news.exists():
 n = news.read_text(encoding="utf-8")
 n = n.replace("export function NewsFeed() {", "export function NewsFeed({ query = '' }: { query?: string }) {", 1)
 if "const visibleItems" not in n:
-    pattern = r"(\s+const makePoster = \(item: NewsItem\) => \{)"
+    pattern = r"(?=\s+const makePoster = \(item: NewsItem\) => \{)"
     filtered = "            const visibleItems: NewsItem[] = items.filter((item) => !query.trim() || (item.title + ' ' + item.summary + ' ' + item.source).toLowerCase().includes(query.trim().toLowerCase()));\n"
-    n, count = re.subn(pattern, filtered + r"\1", n, count=1)
+    n, count = re.subn(pattern, filtered, n, count=1)
     if count != 1:
         raise SystemExit("NewsFeed search insertion point not found.")
 n = n.replace("{items.map((item, i) =>", "{visibleItems.map((item, i) =>", 1)
