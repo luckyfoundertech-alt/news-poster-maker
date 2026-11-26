@@ -52,8 +52,9 @@ try {
         try {
           const scale=480/t.width;
           const url='http://127.0.0.1:5181/#/render?vibe='+encodeURIComponent(t.vibe)+'&id='+encodeURIComponent(t.id)+'&scale='+scale;
+          await page.goto('about:blank');
           await page.goto(url,{waitUntil:'domcontentloaded',timeout:30000});
-          await page.waitForSelector('body[data-ready]',{timeout:25000});
+          await page.waitForSelector('body[data-ready="yes"]',{timeout:25000});
           const stage=await page.$('.render-page');
           if(!stage) throw new Error('render page element missing');
           await stage.screenshot({path:out,type:'jpeg',quality:72});
