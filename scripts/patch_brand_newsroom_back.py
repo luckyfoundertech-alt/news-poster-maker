@@ -86,6 +86,13 @@ if 'href="#/newsroom"' not in h:
     h = h.replace('<nav className="home-sheet" onClick={() => setMenu(false)}>', '<nav className="home-sheet" onClick={() => setMenu(false)}>\n            <a href="#/newsroom">Newsroom</a>', 1)
 home.write_text(h, encoding="utf-8")
 
+# Keep the Unsplash referral test aligned with the NEWS Studio attribution.
+unsplash_test = Path("opentempl/apps/editor/test/unsplash.test.ts")
+if unsplash_test.exists():
+    test_text = unsplash_test.read_text(encoding="utf-8")
+    test_text = test_text.replace("utm_source=opentempl", "utm_source=news-studio")
+    unsplash_test.write_text(test_text, encoding="utf-8")
+
 # Remove remaining Electron-only bridge references from the Android entry point and metrics.
 main_file = root / "main.tsx"
 if main_file.exists():
