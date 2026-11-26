@@ -490,15 +490,13 @@ jobs:
         run: |
           python3 - <<'PY'
           from pathlib import Path
-          import re
           path = Path("android/settings.gradle")
           body = path.read_text()
-          block = re.search(r"(dependencyResolutionManagement\\s*\\{[\\s\\S]*?repositories\\s*\\{)", body)
-          if not block:
-              raise SystemExit("Could not find dependencyResolutionManagement repositories in Android settings.gradle")
-          mirror = '        maven { url "https://maven-central.storage-download.googleapis.com/maven2/" }\\n'
-          if "maven-central.storage-download.googleapis.com" not in body:
-              body = body[:block.end()] + "\\n" + mirror + body[block.end():]
+          mirror = 'maven { url "https://maven-central.storage-download.googleapis.com/maven2/" }'
+          if mirror not in body:
+              if "mavenCentral()" not in body:
+                  raise SystemExit("Could not find mavenCentral() in Android settings.gradle")
+              body = body.replace("mavenCentral()", mirror + "\\n            mavenCentral()", 1)
               path.write_text(body)
           print("Configured Google-hosted Maven Central mirror before Maven Central fallback.")
           PY
