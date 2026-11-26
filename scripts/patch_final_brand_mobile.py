@@ -44,8 +44,14 @@ def apply():
             if updated != original:
                 p.write_text(updated, encoding="utf-8")
                 changed.append(str(p))
-    # Enforce a mobile viewport in the actual editor document before Vite builds it.
+    # Rebrand the HTML document and remove upstream author/social metadata from JSON-LD.
     html = EDITOR / "index.html"
+    if html.exists():
+        page = html.read_text(encoding="utf-8")
+        page = page.replace("OpenTempl", "NEWS Studio").replace("Open Templ", "NEWS Studio")
+        page = re.sub(r'"sameAs"\s*:\s*\[[^\]]*\]\s*,?', "", page)
+        html.write_text(page, encoding="utf-8")
+    # Enforce a mobile viewport in the actual editor document before Vite builds it.
     if html.exists():
         page = html.read_text(encoding="utf-8")
         if not re.search(r'<meta\s+name=["\']viewport["\']', page, re.I):
@@ -92,7 +98,7 @@ def verify(root):
         except (UnicodeDecodeError,OSError): continue
         # Ignore only the legacy photo-search relay hostname; all visible product strings are checked.
         data = data.replace("opentempl.org", "")
-        if re.search(r"OpenTempl", data):
+        if "OpenTempl" in data or "Open Templ" in data:
             bad.append(str(p))
     if bad:
         raise SystemExit("Legacy OpenTempl brand string remains in built app assets: " + ", ".join(bad[:30]))
