@@ -86,6 +86,15 @@ if 'href="#/newsroom"' not in h:
     h = h.replace('<nav className="home-sheet" onClick={() => setMenu(false)}>', '<nav className="home-sheet" onClick={() => setMenu(false)}>\n            <a href="#/newsroom">Newsroom</a>', 1)
 home.write_text(h, encoding="utf-8")
 
+# Remove desktop bridge typing from photo search while preserving its configured proxy.
+unsplash = root / "panels/unsplash.ts"
+if unsplash.exists():
+    u = unsplash.read_text(encoding="utf-8")
+    u = u.replace("return window.tavlaDesktop || !web ? 'https://opentempl.org' : '';",
+                  "return !web ? 'https://opentempl.org' : '';")
+    u = u.replace("u.searchParams.set('utm_source', 'opentempl');", "u.searchParams.set('utm_source', 'news-studio');")
+    unsplash.write_text(u, encoding="utf-8")
+
 # Use the attached brand mark on authentication screens as well as the editor wordmark.
 auth_gate = root / "auth/AuthGate.tsx"
 if auth_gate.exists():
