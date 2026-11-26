@@ -86,6 +86,25 @@ if 'href="#/newsroom"' not in h:
     h = h.replace('<nav className="home-sheet" onClick={() => setMenu(false)}>', '<nav className="home-sheet" onClick={() => setMenu(false)}>\n            <a href="#/newsroom">Newsroom</a>', 1)
 home.write_text(h, encoding="utf-8")
 
+# Android Back/Escape closes the mobile navigation sheet before leaving Home.
+h = home.read_text(encoding="utf-8")
+if "const onAndroidBack = (event: KeyboardEvent)" not in h:
+    marker = "  const [menu, setMenu] = useState(false);"
+    extra = marker + """
+  useEffect(() => {
+    const onAndroidBack = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && menu) {
+        event.preventDefault();
+        setMenu(false);
+      }
+    };
+    window.addEventListener('keydown', onAndroidBack);
+    return () => window.removeEventListener('keydown', onAndroidBack);
+  }, [menu]);"""
+    if marker not in h: raise SystemExit("Home mobile menu state not found for Back handling.")
+    h = h.replace(marker, extra, 1)
+home.write_text(h, encoding="utf-8")
+
 # Keep the Unsplash referral test aligned with the NEWS Studio attribution.
 unsplash_test = Path("opentempl/apps/editor/test/unsplash.test.ts")
 if unsplash_test.exists():
