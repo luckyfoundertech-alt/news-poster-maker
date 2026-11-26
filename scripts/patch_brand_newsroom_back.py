@@ -86,6 +86,14 @@ if 'href="#/newsroom"' not in h:
     h = h.replace('<nav className="home-sheet" onClick={() => setMenu(false)}>', '<nav className="home-sheet" onClick={() => setMenu(false)}>\n            <a href="#/newsroom">Newsroom</a>', 1)
 home.write_text(h, encoding="utf-8")
 
+# Use the attached brand mark on authentication screens as well as the editor wordmark.
+auth_gate = root / "auth/AuthGate.tsx"
+if auth_gate.exists():
+    auth_text = auth_gate.read_text(encoding="utf-8")
+    auth_text, count = re.subn(r"const LOGO = [^;]+;", "const LOGO = import.meta.env.BASE_URL + 'news-studio-logo.webp';", auth_text, count=1)
+    if count != 1: raise SystemExit("Authentication logo source was not found.")
+    auth_gate.write_text(auth_text, encoding="utf-8")
+
 # Rebrand all visible source/UI strings while preserving legal and dependency notices.
 extensions = {".ts",".tsx",".js",".jsx",".html",".css"}
 for folder in [root, Path("opentempl/apps/editor/public")]:
