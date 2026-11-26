@@ -1,10 +1,10 @@
 from pathlib import Path
+import re
 
 root = Path("opentempl/apps/editor/src")
 home = root / "home/Home.tsx"
 s = home.read_text(encoding="utf-8")
 
-# Preserve all editor destinations and features; add unified search and mobile section navigation.
 if 'className="ns-global-search"' not in s:
     anchor = """        <a className="home-brand" href="#/" aria-label="OpenTempl home">
           <Wordmark size={21} />
@@ -39,7 +39,6 @@ s = s.replace("""            <button onClick={() => wallRef.current?.scrollIntoV
             <button onClick={() => document.getElementById('your-designs')?.scrollIntoView({ behavior: 'smooth' })}>My designs</button>
             <button onClick={() => wallRef.current?.scrollIntoView({ behavior: 'smooth' })}>Templates</button>""", 1)
 
-# NewsFeed is inserted by the preceding RSS integration step in the Android workflow.
 if "<NewsFeed />" in s:
     s = s.replace("<NewsFeed />", '<div id="news-feed"><NewsFeed query={tq} /></div>', 1)
 elif "NewsFeed query={tq}" not in s:
@@ -50,39 +49,33 @@ s = s.replace('placeholder="Search your designs"', 'placeholder="Filter your sav
 home.write_text(s, encoding="utf-8")
 
 news = root / "home/NewsFeed.tsx"
-if news.exists():
-    n = news.read_text(encoding="utf-8")
-    n = n.replace("export function NewsFeed() {", "export function NewsFeed({ query = '' }: { query?: string }) {", 1)
-    if "const visibleItems" not in n:
-        n = n.replace(
-            "            const makePoster = (item: NewsItem) => {",
-            """            const visibleItems = items.filter((item) => !query.trim() || (item.title + ' ' + item.summary + ' ' + item.source).toLowerCase().includes(query.trim().toLowerCase()));
-            const makePoster = (item: NewsItem) => {""",
-            1
-        )
-        n = n.replace("{items.map((item, i) =>", "{visibleItems.map((item, i) =>", 1)
-        n = n.replace("{loaded && !items.length && !error ?", "{loaded && !visibleItems.length && !error ?", 1)
-        n = n.replace("No stories found in this feed.", "No stories match this search in the selected feed.", 1)
-    news.write_text(n, encoding="utf-8")
+if not news.exists():
+    raise SystemExit("RSS NewsFeed source missing.")
+n = news.read_text(encoding="utf-8")
+n = n.replace("export function NewsFeed() {", "export function NewsFeed({ query = '' }: { query?: string }) {", 1)
+if "const visibleItems" not in n:
+    pattern = r"(\s+const makePoster = \(item: NewsItem\) => \{)"
+    filtered = "            const visibleItems: NewsItem[] = items.filter((item) => !query.trim() || (item.title + ' ' + item.summary + ' ' + item.source).toLowerCase().includes(query.trim().toLowerCase()));\n"
+    n, count = re.subn(pattern, filtered + r"\1", n, count=1)
+    if count != 1:
+        raise SystemExit("NewsFeed search insertion point not found.")
+n = n.replace("{items.map((item, i) =>", "{visibleItems.map((item, i) =>", 1)
+n = n.replace("{loaded && !items.length && !error ?", "{loaded && !visibleItems.length && !error ?", 1)
+n = n.replace("No stories found in this feed.", "No stories match this search in the selected feed.", 1)
+news.write_text(n, encoding="utf-8")
 
 css = root / "home/home.css"
 c = css.read_text(encoding="utf-8")
 if ".ns-global-search" not in c:
     c += """
 /* NEWS Studio mobile workspace navigation and unified search */
-.ns-global-search {
-  display:flex; align-items:center; gap:9px; width:min(360px,32vw); min-width:180px;
-  height:42px; padding:0 12px; border:1px solid var(--line); border-radius:12px;
-  background:var(--paper-2); color:var(--ink-2); flex:none;
-}
+.ns-global-search { display:flex; align-items:center; gap:9px; width:min(360px,32vw); min-width:180px; height:42px; padding:0 12px; border:1px solid var(--line); border-radius:12px; background:var(--paper-2); color:var(--ink-2); flex:none; }
 .ns-global-search input { width:100%; min-width:0; border:0; outline:0; background:transparent; color:var(--ink); font:inherit; font-size:14px; }
 .ns-global-search input::placeholder { color:var(--ink-3); }
 .ns-global-search button { width:28px; height:28px; flex:none; border-radius:8px; background:var(--hover); font-size:20px; line-height:1; }
 #news-feed, #your-designs, #template-library { scroll-margin-top:calc(var(--bar, 64px) + 16px); }
 #news-feed { padding-top:20px; }
-@media(max-width:900px) {
-  .ns-global-search { width:min(330px,38vw); min-width:150px; }
-}
+@media(max-width:900px) { .ns-global-search { width:min(330px,38vw); min-width:150px; } }
 @media(max-width:720px) {
   .home-top { display:flex; flex-wrap:wrap; align-items:center; }
   .home-top .ns-global-search { order:4; display:flex; width:100%; max-width:none; min-width:0; height:44px; margin:4px 0 2px; }
@@ -92,10 +85,7 @@ if ".ns-global-search" not in c:
   .home main { padding-left:14px; padding-right:14px; }
   #news-feed, #your-designs, #template-library { scroll-margin-top:130px; }
 }
-@media(max-width:360px) {
-  .home-top .ns-global-search { height:42px; }
-  .ns-global-search input { font-size:13px; }
-}
+@media(max-width:360px) { .home-top .ns-global-search { height:42px; } .ns-global-search input { font-size:13px; } }
 """
 css.write_text(c, encoding="utf-8")
 
@@ -105,4 +95,4 @@ t = t.replace("document.title = 'Start a design · OpenTempl';", "document.title
 t = t.replace('aria-label="OpenTempl home"', 'aria-label="NEWS Studio home"')
 start.write_text(t, encoding="utf-8")
 
-print("NEWS Studio mobile workspace navigation, unified search and responsive layout patched.")
+print("NEWS Studio workspace and scoped newsroom search patched.")
