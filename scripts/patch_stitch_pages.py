@@ -139,8 +139,42 @@ export function Projects() {
 
 # A separate Templates route uses the real searchable template index and existing editor launch action.
 templates = root / "home/TemplatesPage.tsx"
-templates.write_text("""import { Home } from './Home';
-export function TemplatesPage(){ return <Home jump='templates'/>; }
+templates.write_text("""import { useEffect, useMemo, useState } from 'react';
+import { navigate } from '../App';
+import { auth } from '../auth/firebase';
+import { loadTemplateIndex, thumbUrl, blended, byScore, type TemplateEntry, type TemplateIndex } from '../templates/packs';
+import { TEMPLATES } from '../templates';
+import { TemplatePreview } from '../templates/Preview';
+import { Wordmark } from '../ui/Logo';
+import { Icon } from '../ui/icons';
+import './home.css';
+
+const quickCategories = ['All','Breaking News','Editorial','Social Stories','Sports','Business','Infographics','Quotes','YouTube Banners'];
+export function TemplatesPage(){
+ const [index,setIndex]=useState<TemplateIndex|null>(null);
+ const [query,setQuery]=useState('');
+ const [category,setCategory]=useState('All');
+ const [loading,setLoading]=useState(true);
+ useEffect(()=>{let live=true;loadTemplateIndex().then(v=>{if(live){setIndex(v);setLoading(false);}});return()=>{live=false;};},[]);
+ const categories=useMemo(()=>index?quickCategories.map(name=>({name,ids:index.templates.filter(t=>name==='All'||(t.category+' '+t.vibe+' '+t.tags.join(' ')).toLowerCase().includes(name.toLowerCase().replace(' news','').replace(' stories',''))).map(t=>t.id)})):[],[index]);
+ const visible=useMemo(()=>{
+  if(!index)return [];
+  const q=query.trim().toLowerCase();
+  const ids=categories.find(c=>c.name===category)?.ids;
+  const list=index.templates.filter(t=>(!ids||category==='All'||ids.includes(t.id))&&(!q||[t.name,t.category,t.vibe,...t.tags].join(' ').toLowerCase().includes(q)));
+  return category==='All'?blended(list):byScore(list);
+ },[index,query,category,categories]);
+ return <main className='ns-templates-page'>
+  <header className='ns-projects-head'><button className='btn btn-outline' onClick={()=>navigate('/')}>← Home</button><Wordmark size={20}/><span className='grow'/><a className='ns-account-avatar' href='#/profile'>{auth.currentUser?.photoURL?<img src={auth.currentUser.photoURL} alt=''/>:(auth.currentUser?.displayName||auth.currentUser?.email||'N').slice(0,1).toUpperCase()}</a></header>
+  <section className='ns-projects-intro'><p className='ns-eyebrow'>DESIGN LIBRARY</p><h1>Templates</h1><p>Choose a ready-made layout and make every element your own.</p></section>
+  <div className='ns-template-search ns-main-search'><Icon name='search'/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder='Search news, sports, business, quotes…' aria-label='Search templates'/>{query?<button onClick={()=>setQuery('')}>×</button>:null}</div>
+  <div className='ns-template-categories'>{quickCategories.map(c=><button key={c} className={category===c?'active':''} onClick={()=>setCategory(c)}>{c}</button>)}</div>
+  <section className='ns-template-section'><div className='ns-template-section-head'><div><h2>{category==='All'?'Trending layouts':category}</h2><p>{visible.length} templates available</p></div><span>NEWS Studio Library</span></div>
+   {loading?<div className='ns-template-skeleton' aria-label='Loading templates'><i/><i/><i/><i/></div>:visible.length?<div className='ns-template-grid'>{visible.map(t=><button className='ns-template-card' key={t.id} onClick={()=>navigate('/new?template='+encodeURIComponent(t.id))}><div className='ns-template-thumb'><img src={thumbUrl(t.id)} alt='' loading='lazy' onError={e=>{(e.currentTarget as HTMLImageElement).style.opacity='0';}}/></div><div className='ns-template-meta'><b>{t.name}</b><small>{t.category} · {t.width}×{t.height}</small></div></button>)}</div>:<div className='ns-project-empty'><Icon name='search'/><b>No templates found</b><p>Try a different search or category.</p></div>}
+  </section>
+  <nav className='ns-bottom-nav' aria-label='Main navigation'><a href='#/'><Icon name='home'/><span>Home</span></a><a className='active' href='#/templates'><Icon name='grid'/><span>Templates</span></a><a className='ns-bottom-create' href='#/start'><Icon name='plus'/></a><a href='#/newsroom'><Icon name='page'/><span>Newsroom</span></a><a href='#/profile'><Icon name='users'/><span>Profile</span></a></nav>
+ </main>;
+}
 """,encoding="utf-8")
 
 # Add routes to the app shell, retaining existing editor and template builder.
