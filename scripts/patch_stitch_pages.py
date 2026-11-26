@@ -142,9 +142,7 @@ templates = root / "home/TemplatesPage.tsx"
 templates.write_text("""import { useEffect, useMemo, useState } from 'react';
 import { navigate } from '../App';
 import { auth } from '../auth/firebase';
-import { loadTemplateIndex, thumbUrl, blended, byScore, type TemplateEntry, type TemplateIndex } from '../templates/packs';
-import { TEMPLATES } from '../templates';
-import { TemplatePreview } from '../templates/Preview';
+import { loadTemplateIndex, thumbUrl, blended, byScore, type TemplateIndex } from '../templates/packs';
 import { Wordmark } from '../ui/Logo';
 import { Icon } from '../ui/icons';
 import './home.css';
