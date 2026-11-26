@@ -36,7 +36,6 @@ def apply():
             updated = re.sub(r'https?://(?:www\.)?opentempl\.org[^\s"<>)]*', "https://example.com", original, flags=re.I)
             # Rebrand product-name literals, not internal camelCase identifiers such as opentemplRender.
             updated = updated.replace("OpenTempl", "NEWS Studio").replace("Open Templ", "NEWS Studio")
-            updated = updated.replace(".opentempl", ".newsstudio")
             updated = re.sub(r"on your computer", "on your Android device", updated, flags=re.I)
             updated = re.sub(r"on this computer", "on this device", updated, flags=re.I)
             updated = re.sub(r"desktop app", "Android app", updated, flags=re.I)
