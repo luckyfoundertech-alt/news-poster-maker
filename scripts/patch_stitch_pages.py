@@ -11,7 +11,7 @@ if "import { auth } from '../auth/firebase';" not in s:
 # Strip all AI generation concepts from the home module; the app is intentionally non-AI.
 s = s.replace("import { loadLooks, sampleUrl, type Look } from '../generate/looks';\n", "")
 # Remove unused artwork generator from the retired AI/looks dashboard.
-s = re.sub(r"// Drawn in a 600 x 640 design space\\..*?// The template wall:", "// The template wall:", s, flags=re.S)
+s = re.sub(r"// Drawn in a 600 x 640 design space\..*?// The template wall:", "// The template wall:", s, flags=re.S)
 s = s.replace("  const [looks, setLooks] = useState<Look[]>([]);\n", "")
 s = s.replace("    loadLooks().then(setLooks);\n", "")
 s = re.sub(r"\s*\{looks\.length \? \(.*?\n\s*\) : null\}\n", "\n", s, flags=re.S)
