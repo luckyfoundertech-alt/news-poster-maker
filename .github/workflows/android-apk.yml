@@ -426,12 +426,19 @@ jobs:
         run: python3 scripts/patch_mobile_workspace.py
       - name: Rebrand Android app, create dedicated Newsroom and fix system Back
         run: python3 scripts/patch_brand_newsroom_back.py
+      - name: Apply reliable live Newsroom refresh across all configured feeds
+        run: python3 scripts/patch_newsroom_refresh.py
       - name: Apply Stitch-inspired Android Home, Projects and bottom navigation
         run: python3 scripts/patch_stitch_pages.py
       - name: Final NEWS Studio brand sweep and Android viewport compatibility
         run: python3 scripts/patch_final_brand_mobile.py apply
       - name: Apply unified Canva-inspired NEWS Studio UI system
         run: python3 scripts/patch_canva_ui_system.py
+      - name: Generate 3000+ editable Indian templates and Hindi search metadata
+        run: node scripts/generate_indian_templates.mjs
+      - name: Build all template packs and searchable index
+        working-directory: opentempl
+        run: node scripts/build-templates.mjs
       - name: Build NEWS Studio editor and template library
         working-directory: opentempl
         run: |
@@ -479,8 +486,18 @@ jobs:
           data = json.loads(index.read_text(encoding="utf-8"))
           templates = data.get("templates", [])
           vibes = data.get("vibes", {})
-          if len(templates) < 337:
-              raise SystemExit(f"Expected at least 337 templates, found {len(templates)}")
+          if len(templates) < 3337:
+              raise SystemExit(f"Expected at least 3337 total templates (337 existing + 3000 Indian), found {len(templates)}")
+          indian_vibes = {"bharat-news", "state-district", "politics-public", "cricket-sports", "business-education", "indian-festivals", "national-culture"}
+          indian = [t for t in templates if t.get("vibe") in indian_vibes]
+          if len(indian) < 3000:
+              raise SystemExit(f"Expected at least 3000 Indian templates, found {len(indian)}")
+          for vibe in indian_vibes:
+              count = sum(1 for t in templates if t.get("vibe") == vibe)
+              if count == 0:
+                  raise SystemExit(f"Indian template category missing: {vibe}")
+          if not any("समाचार" in " ".join(t.get("tags", [])) or "ताज़ा खबर" in " ".join(t.get("tags", [])) for t in indian):
+              raise SystemExit("Hindi search metadata is missing from the Indian template library")
           ids = [t.get("id") for t in templates]
           if any(not template_id for template_id in ids):
               raise SystemExit("One or more templates are missing an ID")
