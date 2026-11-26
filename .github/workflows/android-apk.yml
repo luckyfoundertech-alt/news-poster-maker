@@ -27,7 +27,7 @@ jobs:
     steps:
       - name: Checkout NEWS Android shell
         uses: actions/checkout@v4
-      - name: Checkout OpenTempl editor source (MIT)
+      - name: Checkout editor source for NEWS Studio (MIT)
         uses: actions/checkout@v4
         with:
           repository: noah-thing/opentempl
