@@ -1,0 +1,126 @@
+from pathlib import Path
+import re, json
+
+root = Path("opentempl/apps/editor/src")
+app = root / "App.tsx"
+s = app.read_text(encoding="utf-8")
+
+# Remove desktop-only integration code; keep Android-native import/export flows.
+s = re.sub(r"declare global \{\s*interface Window \{\s*tavlaDesktop\?:.*?\n\}\n\n// Inside the desktop app:.*?\n\}\n", "", s, flags=re.S)
+if "tavlaDesktop" in s:
+    raise SystemExit("Desktop bridge remains in App.tsx; refusing partial cleanup.")
+s = s.replace("import { Sign } from './ui/Logo';\n", "")
+s = s.replace("import { Home } from './home/Home';", "import { Home } from './home/Home';\nimport { Newsroom } from './home/Newsroom';")
+if "if (path === '/newsroom') return <Newsroom />;" not in s:
+    s = s.replace("  if (path === '/icons') return <IconSheet />;", "  if (path === '/newsroom') return <Newsroom />;\n  if (path === '/icons') return <IconSheet />;", 1)
+s = s.replace("document.title = 'OpenTempl';", "document.title = 'NEWS Studio';")
+app.write_text(s, encoding="utf-8")
+
+# Dedicated RSS newsroom page: same RSS parser and original article-to-template action.
+newsroom = root / "home/Newsroom.tsx"
+newsroom.write_text("""import { NewsFeed } from './NewsFeed';
+import { navigate } from '../App';
+import { Wordmark } from '../ui/Logo';
+import './home.css';
+
+export function Newsroom() {
+  return <main className='ns-newsroom'>
+    <header className='ns-newsroom-head'>
+      <button className='btn btn-outline' onClick={() => navigate('/')}>← Home</button>
+      <Wordmark size={21}/>
+      <span className='ns-newsroom-spacer'/>
+      <button className='btn btn-primary' onClick={() => navigate('/start')}>Create design</button>
+    </header>
+    <section className='ns-newsroom-intro'>
+      <span className='ns-newsroom-kicker'>NEWS STUDIO · LIVE FEEDS</span>
+      <h1>Newsroom</h1>
+      <p>Choose a news source, review the original headline and details, then create an editable poster from the selected story.</p>
+    </section>
+    <div className='ns-newsroom-feed'><NewsFeed /></div>
+  </main>;
+}
+""", encoding="utf-8")
+
+css = root / "home/home.css"
+c = css.read_text(encoding="utf-8")
+if ".ns-newsroom{" not in c:
+    c += """
+.ns-newsroom{height:100dvh;overflow:auto;background:var(--paper);color:var(--ink);padding-bottom:env(safe-area-inset-bottom)}
+.ns-newsroom-head{position:sticky;top:0;z-index:30;display:flex;align-items:center;gap:12px;min-height:60px;padding:8px 16px;background:var(--paper);border-bottom:1px solid var(--line)}
+.ns-newsroom-spacer{flex:1}
+.ns-newsroom-intro{width:min(100% - 32px,1100px);margin:28px auto 16px}
+.ns-newsroom-kicker{font-size:11px;font-weight:800;letter-spacing:.12em;color:var(--accent,#304ffe)}
+.ns-newsroom-intro h1{font-size:clamp(28px,5vw,42px);letter-spacing:-.04em;margin:8px 0}
+.ns-newsroom-intro p{max-width:680px;color:var(--ink-2);font-size:14px;line-height:1.55}
+.ns-newsroom-feed{width:min(100% - 32px,1100px);margin:0 auto 40px}
+.ns-newsroom-feed .home-section{border:0!important;padding:0!important}
+@media(max-width:520px){.ns-newsroom-head{padding:8px 12px;gap:8px}.ns-newsroom-intro,.ns-newsroom-feed{width:calc(100% - 24px)}.ns-newsroom-intro{margin-top:18px}}
+"""
+css.write_text(c, encoding="utf-8")
+
+# Remove the RSS feed from the crowded home dashboard; link to its dedicated page.
+home = root / "home/Home.tsx"
+h = home.read_text(encoding="utf-8")
+h = re.sub(r'\s*<div id="news-feed"><NewsFeed query=\{tq\} /></div>', "", h)
+h = re.sub(r'\s*<NewsFeed(?: query=\{tq\})?\s*/>', "", h)
+h = h.replace("import { NewsFeed } from './NewsFeed';\n", "")
+if "Newsroom" not in h:
+    h = h.replace("<nav className=\"home-nav\">", "<nav className=\"home-nav\">\n          <a href=\"#/newsroom\">Newsroom</a>", 1)
+    h = h.replace("<nav className=\"home-sheet\"", "<nav className=\"home-sheet\"", 1)
+    h = h.replace("<button onClick={() => wallRef.current?.scrollIntoView({ behavior: 'smooth' })}>Templates</button>", "<a href=\"#/newsroom\">Newsroom</a>\n          <button onClick={() => wallRef.current?.scrollIntoView({ behavior: 'smooth' })}>Templates</button>", 1)
+home.write_text(h, encoding="utf-8")
+
+# Rebrand all visible source/UI strings while preserving legal and dependency notices.
+extensions = {".ts",".tsx",".js",".jsx",".html",".css",".json",".webmanifest"}
+for folder in [root, Path("opentempl/apps/editor/public")]:
+    if not folder.exists(): continue
+    for p in folder.rglob("*"):
+        if not p.is_file() or p.suffix.lower() not in extensions: continue
+        if any(x in p.parts for x in ["node_modules","licenses","legal","third_party","third-party"]): continue
+        try: t = p.read_text(encoding="utf-8")
+        except Exception: continue
+        original = t
+        t = re.sub(r"OpenTempl", "NEWS Studio", t, flags=re.I)
+        t = re.sub(r"Open Templ", "NEWS Studio", t, flags=re.I)
+        # Remove visible desktop download/install copy, not internal source/licence records.
+        t = re.sub(r"<a\b[^>]*href=[\"'][^\"']*/download[^\"']*[\"'][^>]*>.*?</a>", "", t, flags=re.I|re.S)
+        t = re.sub(r"<[^>]+>[^<]*(?:Desktop app|Desktop version|Install on Mac|Mac, Windows and Linux|Windows and macOS)[^<]*</[^>]+>", "", t, flags=re.I|re.S)
+        if t != original: p.write_text(t, encoding="utf-8")
+
+# Android system back: close the current editor sheet/dialog first, then pop one route.
+# The native plugin is installed in the workflow; fallback keeps browser builds functional.
+if "installAndroidBackNavigation" not in s:
+    s = s.replace("export function App() {", """let backHandlerInstalled = false;
+function installAndroidBackNavigation() {
+  if (backHandlerInstalled) return;
+  backHandlerInstalled = true;
+  const handleBack = () => {
+    const keyEvent = new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true });
+    document.dispatchEvent(keyEvent);
+    if (keyEvent.defaultPrevented) return;
+    const current = window.location.hash.replace(/^#/, '') || '/';
+    if (current !== '/') {
+      if (window.history.length > 1) window.history.back();
+      else window.location.hash = '#/';
+      return;
+    }
+  };
+  window.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && event.defaultPrevented) return;
+  });
+  void import('@capacitor/app').then(({ App: NativeApp }) => {
+    void NativeApp.addListener('backButton', () => handleBack());
+  }).catch(() => {
+    window.addEventListener('popstate', () => {});
+  });
+}
+
+export function App() {
+  useEffect(() => { installAndroidBackNavigation(); }, []);""", 1)
+
+# Add a clear newsroom entry in mobile navigation if the earlier patch layout differs.
+if 'href="#/newsroom"' not in h:
+    raise SystemExit("Newsroom navigation link was not added.")
+app.write_text(s, encoding="utf-8")
+
+print("NEWS Studio branding cleanup, dedicated RSS Newsroom route, and Android back handler patched.")
