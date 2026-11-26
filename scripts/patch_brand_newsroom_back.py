@@ -104,8 +104,6 @@ for folder in [root, Path("opentempl/apps/editor/public")]:
         try: t = p.read_text(encoding="utf-8")
         except Exception: continue
         original = t
-        t = re.sub(r"OpenTempl", "NEWS Studio", t, flags=re.I)
-        t = re.sub(r"Open Templ", "NEWS Studio", t, flags=re.I)
         # Remove visible desktop download/install copy, not internal source/licence records.
         t = re.sub(r"<a\b[^>]*href=[\"'][^\"']*/download[^\"']*[\"'][^>]*>.*?</a>", "", t, flags=re.I|re.S)
         t = re.sub(r"<[^>]+>[^<]*(?:Desktop app|Desktop version|Install on Mac|Mac, Windows and Linux|Windows and macOS)[^<]*</[^>]+>", "", t, flags=re.I|re.S)
