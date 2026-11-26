@@ -459,7 +459,7 @@ jobs:
           NODE
           npm install --no-fund
           npm install -w @opentempl/editor @capacitor/app@^7.0.1 @capacitor/core@^7.1.0 @capacitor/filesystem@^7.1.4 @capacitor/share@^7.0.2 firebase@^12.6.0 @capacitor-firebase/authentication@^7.2.0 --no-fund
-          THUMBNAIL_LIMIT=10 node ../scripts/generate_template_thumbnails.mjs
+          THUMBNAIL_LIMIT=1 node ../scripts/generate_template_thumbnails.mjs
           node ../scripts/generate_template_thumbnails.mjs
           # Apply only non-breaking fixes. Never use npm audit fix --force in release builds.
           npm audit fix --no-fund || echo "::warning::npm audit fix could not resolve all advisories without breaking changes; continuing to compile and package APK."
