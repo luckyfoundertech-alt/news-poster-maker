@@ -88,7 +88,7 @@ if "Newsroom" not in h:
 home.write_text(h, encoding="utf-8")
 
 # Rebrand all visible source/UI strings while preserving legal and dependency notices.
-extensions = {".ts",".tsx",".js",".jsx",".html",".css",".json",".webmanifest"}
+extensions = {".ts",".tsx",".js",".jsx",".html",".css"}
 for folder in [root, Path("opentempl/apps/editor/public")]:
     if not folder.exists(): continue
     for p in folder.rglob("*"):
