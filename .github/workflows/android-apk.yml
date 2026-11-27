@@ -567,11 +567,20 @@ jobs:
         run: |
           mkdir -p "$HOME/.gradle/init.d"
           cat > "$HOME/.gradle/init.d/00-maven-central-mirror.gradle" <<'GRADLE'
+          import org.gradle.api.artifacts.repositories.MavenArtifactRepository
+
+          def centralMirror = uri("https://maven-central-asia.storage-download.googleapis.com/maven2/")
+
           allprojects {
             repositories {
-              maven {
-                name = "GoogleCloudMavenCentralMirror"
-                url = uri("https://maven-central-asia.storage-download.googleapis.com/maven2/")
+              // Rewrite Maven Central itself, rather than merely adding a fallback repository.
+              // Gradle stops dependency resolution on HTTP 429 from the original endpoint.
+              all { repo ->
+                if (repo instanceof MavenArtifactRepository &&
+                    repo.url.toString().startsWith("https://repo.maven.apache.org/maven2")) {
+                  repo.setUrl(centralMirror)
+                  println("Redirected ${repo.name} to Google Cloud Maven Central mirror")
+                }
               }
             }
           }
