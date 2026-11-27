@@ -16,6 +16,7 @@ concurrency:
   cancel-in-progress: true
 permissions:
   contents: read
+  actions: read
 jobs:
   build-apk:
     runs-on: ubuntu-latest
@@ -706,33 +707,48 @@ jobs:
               raise SystemExit(f"Play protection requires minSdkVersion >= 24; bundle contains {min_sdk}")
           print("Compiled AAB manifest passes Google Play minimum SDK requirement.")
           PY
-      - name: Sign release AAB with original Play upload key and verify certificate
+      - name: Download Google-approved reset upload-key backup
+        uses: actions/download-artifact@v4
+        with:
+          name: Ghost-Editorz-Upload-Key-Backup
+          repository: ${{ github.repository }}
+          run-id: 45988628616
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/ghost-editorz-upload-key
+
+      - name: Sign release AAB with reset upload key and verify certificate
         working-directory: android
         shell: bash
         run: |
           set -euo pipefail
-          EXPECTED_SHA1="FA:5F:53:0C:6B:38:44:C1:12:FB:C4:84:E9:43:91:AD:F2:FA:CD:05"
-          if [[ -z "${ANDROID_KEYSTORE_BASE64:-}" || -z "${ANDROID_KEY_ALIAS:-}" || -z "${ANDROID_KEYSTORE_PASSWORD:-}" || -z "${ANDROID_KEY_PASSWORD:-}" ]]; then
-            echo "::error::Original Play upload key secrets are missing. Configure ANDROID_KEYSTORE_BASE64, ANDROID_KEY_ALIAS, ANDROID_KEYSTORE_PASSWORD and ANDROID_KEY_PASSWORD using the original upload-keystore.jks (alias upload). Never generate a new upload key for an existing Play app."
+          EXPECTED_SHA1="34:B2:B1:D6:BB:28:28:3F:F2:D0:16:E8:E9:B8:FE:D4:60:D4:AB:47"
+          KEY_DIR="$RUNNER_TEMP/ghost-editorz-upload-key"
+          KEYSTORE="$KEY_DIR/Ghost-Editorz-Upload.jks"
+          DETAILS="$KEY_DIR/KEY-DETAILS.txt"
+          CERT="$RUNNER_TEMP/ghost-editorz-reset-upload-certificate.pem"
+          test -s "$KEYSTORE"
+          test -s "$DETAILS"
+          ALIAS="$(awk -F': ' '/^Alias:/{print $2; exit}' "$DETAILS")"
+          STORE_PASS="$(awk -F': ' '/^Store password:/{print $2; exit}' "$DETAILS")"
+          KEY_PASS="$(awk -F': ' '/^Key password:/{print $2; exit}' "$DETAILS")"
+          if [[ -z "$ALIAS" || -z "$STORE_PASS" || -z "$KEY_PASS" ]]; then
+            echo "::error::Reset upload-key backup is missing required metadata."
             exit 1
           fi
-          KEYSTORE="$RUNNER_TEMP/original-play-upload.jks"
-          CERT="$RUNNER_TEMP/original-play-upload-certificate.pem"
-          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$KEYSTORE"
-          keytool -list -v -keystore "$KEYSTORE" -storepass "$ANDROID_KEYSTORE_PASSWORD" -alias "$ANDROID_KEY_ALIAS" > "$RUNNER_TEMP/key-info.txt"
+          keytool -list -v -keystore "$KEYSTORE" -storepass "$STORE_PASS" -alias "$ALIAS" > "$RUNNER_TEMP/key-info.txt"
           ACTUAL_SHA1="$(awk -F': ' '/SHA1:/{print $2; exit}' "$RUNNER_TEMP/key-info.txt" | tr '[:lower:]' '[:upper:]')"
-          echo "Original upload-key certificate SHA1: $ACTUAL_SHA1"
+          echo "Reset upload-key certificate SHA1: $ACTUAL_SHA1"
           if [[ "$ACTUAL_SHA1" != "$EXPECTED_SHA1" ]]; then
-            echo "::error::Configured keystore SHA1 does not match the Play Console upload certificate. Expected $EXPECTED_SHA1 but found $ACTUAL_SHA1. Refusing to sign."
+            echo "::error::Reset upload key does not match the fingerprint submitted to Google Play. Refusing to sign."
             exit 1
           fi
-          keytool -exportcert -rfc -keystore "$KEYSTORE" -storepass "$ANDROID_KEYSTORE_PASSWORD" -alias "$ANDROID_KEY_ALIAS" -file "$CERT"
-          jarsigner -sigalg SHA256withRSA -digestalg SHA-256 -keystore "$KEYSTORE" -storepass "$ANDROID_KEYSTORE_PASSWORD" -keypass "$ANDROID_KEY_PASSWORD" app/build/outputs/bundle/release/app-release.aab "$ANDROID_KEY_ALIAS"
+          keytool -exportcert -rfc -keystore "$KEYSTORE" -storepass "$STORE_PASS" -alias "$ALIAS" -file "$CERT"
+          jarsigner -sigalg SHA256withRSA -digestalg SHA-256 -keystore "$KEYSTORE" -storepass "$STORE_PASS" -keypass "$KEY_PASS" app/build/outputs/bundle/release/app-release.aab "$ALIAS"
           jarsigner -verify -verbose -certs app/build/outputs/bundle/release/app-release.aab
           mkdir -p signing-output
-          cp "$CERT" signing-output/Play-Console-Expected-Upload-Certificate.pem
-          printf 'Alias: %s\nStore type: original user-provided keystore\nCertificate SHA1: %s\n' "$ANDROID_KEY_ALIAS" "$ACTUAL_SHA1" > signing-output/KEY-DETAILS.txt
-          echo "AAB signed with the original Play Console upload certificate and verified."
+          cp "$CERT" signing-output/Play-Console-Reset-Upload-Certificate.pem
+          printf 'Alias: %s\nStore type: JKS reset upload key\nCertificate SHA1: %s\n' "$ALIAS" "$ACTUAL_SHA1" > signing-output/KEY-DETAILS.txt
+          echo "AAB signed with the reset upload certificate and signature verification passed."
       - name: Upload signed Ghost Editorz AAB
         uses: actions/upload-artifact@v4
         with:
