@@ -525,6 +525,34 @@ jobs:
           npm install @capacitor/app@^7.0.1 @capacitor/filesystem@^7.1.4 @capacitor/share@^7.0.2 --no-fund
       - name: Generate Android project
         run: npx cap add android
+      - name: Enforce Google Play minimum Android SDK 24
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          variables = Path("android/variables.gradle")
+          if not variables.exists():
+              raise SystemExit("android/variables.gradle was not generated")
+          body = variables.read_text()
+          matches = list(re.finditer(r"(?m)^(\\s*minSdkVersion\\s*=\\s*)\\d+", body))
+          if len(matches) != 1:
+              raise SystemExit(f"Expected exactly one minSdkVersion in variables.gradle, found {len(matches)}")
+          body = re.sub(r"(?m)^(\\s*minSdkVersion\\s*=\\s*)\\d+", r"\\g<1>24", body)
+          variables.write_text(body)
+          app = Path("android/app/build.gradle")
+          app_body = app.read_text()
+          # Capacitor's generated app module must consume the centralized minSdk value.
+          if not re.search(r"minSdkVersion\\s+rootProject\\.ext\\.minSdkVersion", app_body):
+              if re.search(r"minSdkVersion\\s+\\d+", app_body):
+                  app_body = re.sub(r"minSdkVersion\\s+\\d+", "minSdkVersion 24", app_body, count=1)
+              else:
+                  raise SystemExit("Could not locate app module minSdkVersion declaration")
+              app.write_text(app_body)
+          value = re.search(r"(?m)^\\s*minSdkVersion\\s*=\\s*(\\d+)", variables.read_text())
+          if not value or int(value.group(1)) < 24:
+              raise SystemExit("Google Play minimum SDK validation failed")
+          print("Verified Android minSdkVersion = 24")
+          PY
       - name: Apply NEWS Studio launcher icon
         run: |
           python3 -m pip install --quiet Pillow
