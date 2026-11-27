@@ -7,12 +7,17 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:519573612826:android:8568296d317fa86bcfa4a3",
+        "mobilesdk_app_id": "1:519573612826:android:36a218389c2ac437cfa4a3",
         "android_client_info": {
-          "package_name": "com.luckyfoundertech.news"
+          "package_name": "com.luckyfoundertech.ghosteditorz"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "519573612826-k8uuke9l4ookv9kanv9dmdt8offusmvn.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyDsCRBHw7EGuu1F3PwSyr2gGLwhLoqAjqE"
@@ -20,7 +25,41 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "519573612826-k8uuke9l4ookv9kanv9dmdt8offusmvn.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:519573612826:android:8568296d317fa86bcfa4a3",
+        "android_client_info": {
+          "package_name": "com.luckyfoundertech.news"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "519573612826-k8uuke9l4ookv9kanv9dmdt8offusmvn.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDsCRBHw7EGuu1F3PwSyr2gGLwhLoqAjqE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "519573612826-k8uuke9l4ookv9kanv9dmdt8offusmvn.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }
