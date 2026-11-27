@@ -608,7 +608,7 @@ jobs:
               raise SystemExit("Generated Android app Gradle file or manifest is missing")
           body = gradle.read_text()
           body, count = re.subn(
-              r"minSdkVersion[ \\t]+(?:rootProject[.]ext[.]minSdkVersion|[0-9]+)",
+              r"minSdkVersion\\s+(?:rootProject\\.ext\\.minSdkVersion|[0-9]+)",
               "minSdkVersion 24",
               body,
               count=1,
@@ -621,7 +621,7 @@ jobs:
           if uses_sdk:
               tag = uses_sdk.group(0)
               if re.search(r"android:minSdkVersion\\s*=", tag):
-                  tag = re.sub(r'android:minSdkVersion\\s*=\\s*["\\'][^"\\']*["\\']', 'android:minSdkVersion="24"', tag)
+                  tag = re.sub(r"""android:minSdkVersion\\s*=\\s*["'][^"']*["']""", 'android:minSdkVersion="24"', tag)
               else:
                   tag = tag[:-1] + ' android:minSdkVersion="24">'
               xml = xml[:uses_sdk.start()] + tag + xml[uses_sdk.end():]
@@ -631,7 +631,7 @@ jobs:
                   raise SystemExit("AndroidManifest.xml has no manifest root element")
               xml = xml[:opening.end()] + '\\n    <uses-sdk android:minSdkVersion="24" />' + xml[opening.end():]
           manifest.write_text(xml)
-          if not re.search(r"minSdkVersion[ \\t]+24", gradle.read_text()):
+          if not re.search(r"minSdkVersion\\s+24", gradle.read_text()):
               raise SystemExit("Final Gradle minSdkVersion is not 24")
           if not re.search(r'<uses-sdk\\b[^>]*android:minSdkVersion="24"', manifest.read_text()):
               raise SystemExit("Final Android manifest minSdkVersion is not explicitly 24")
