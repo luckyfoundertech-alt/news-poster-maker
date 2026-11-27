@@ -597,6 +597,46 @@ jobs:
           PY
       - name: Sync full editor into Android
         run: npx cap sync android
+      - name: Re-enforce min SDK after Capacitor sync in Gradle and manifest
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          gradle = Path("android/app/build.gradle")
+          manifest = Path("android/app/src/main/AndroidManifest.xml")
+          if not gradle.is_file() or not manifest.is_file():
+              raise SystemExit("Generated Android app Gradle file or manifest is missing")
+          body = gradle.read_text()
+          body, count = re.subn(
+              r"minSdkVersion[ \\t]+(?:rootProject[.]ext[.]minSdkVersion|[0-9]+)",
+              "minSdkVersion 24",
+              body,
+              count=1,
+          )
+          if count != 1:
+              raise SystemExit("Could not enforce minSdkVersion 24 in final app/build.gradle")
+          gradle.write_text(body)
+          xml = manifest.read_text()
+          uses_sdk = re.search(r"<uses-sdk\\b[^>]*>", xml)
+          if uses_sdk:
+              tag = uses_sdk.group(0)
+              if re.search(r"android:minSdkVersion\\s*=", tag):
+                  tag = re.sub(r'android:minSdkVersion\\s*=\\s*["\\'][^"\\']*["\\']', 'android:minSdkVersion="24"', tag)
+              else:
+                  tag = tag[:-1] + ' android:minSdkVersion="24">'
+              xml = xml[:uses_sdk.start()] + tag + xml[uses_sdk.end():]
+          else:
+              opening = re.search(r"<manifest\\b[^>]*>", xml)
+              if not opening:
+                  raise SystemExit("AndroidManifest.xml has no manifest root element")
+              xml = xml[:opening.end()] + '\\n    <uses-sdk android:minSdkVersion="24" />' + xml[opening.end():]
+          manifest.write_text(xml)
+          if not re.search(r"minSdkVersion[ \\t]+24", gradle.read_text()):
+              raise SystemExit("Final Gradle minSdkVersion is not 24")
+          if not re.search(r'<uses-sdk\\b[^>]*android:minSdkVersion="24"', manifest.read_text()):
+              raise SystemExit("Final Android manifest minSdkVersion is not explicitly 24")
+          print("Final post-sync Gradle and AndroidManifest minSdkVersion are both explicitly 24.")
+          PY
       - name: Configure resilient Maven Central mirror for Android dependencies
         working-directory: android
         run: |
