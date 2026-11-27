@@ -706,24 +706,33 @@ jobs:
               raise SystemExit(f"Play protection requires minSdkVersion >= 24; bundle contains {min_sdk}")
           print("Compiled AAB manifest passes Google Play minimum SDK requirement.")
           PY
-      - name: Generate upload key, sign and verify release AAB
+      - name: Sign release AAB with original Play upload key and verify certificate
         working-directory: android
         shell: bash
         run: |
           set -euo pipefail
-          KEYSTORE="$RUNNER_TEMP/ghost-editorz-upload.jks"
-          CERT="$RUNNER_TEMP/ghost-editorz-upload-certificate.pem"
-          STORE_PASS="$(openssl rand -hex 24)"
-          KEY_PASS="$STORE_PASS"
-          keytool -genkeypair -noprompt -v -keystore "$KEYSTORE" -storetype JKS -storepass "$STORE_PASS" -keypass "$KEY_PASS" -alias GhostEditorzUpload -keyalg RSA -keysize 4096 -validity 10000 -dname "CN=Ghost Editorz, OU=Android, O=Lucky Founder Tech, L=Durg, ST=Chhattisgarh, C=IN"
-          keytool -exportcert -rfc -keystore "$KEYSTORE" -storepass "$STORE_PASS" -alias GhostEditorzUpload -file "$CERT"
-          jarsigner -sigalg SHA256withRSA -digestalg SHA-256 -keystore "$KEYSTORE" -storepass "$STORE_PASS" -keypass "$KEY_PASS" app/build/outputs/bundle/release/app-release.aab GhostEditorzUpload
+          EXPECTED_SHA1="FA:5F:53:0C:6B:38:44:C1:12:FB:C4:84:E9:43:91:AD:F2:FA:CD:05"
+          if [[ -z "${ANDROID_KEYSTORE_BASE64:-}" || -z "${ANDROID_KEY_ALIAS:-}" || -z "${ANDROID_KEYSTORE_PASSWORD:-}" || -z "${ANDROID_KEY_PASSWORD:-}" ]]; then
+            echo "::error::Original Play upload key secrets are missing. Configure ANDROID_KEYSTORE_BASE64, ANDROID_KEY_ALIAS, ANDROID_KEYSTORE_PASSWORD and ANDROID_KEY_PASSWORD using the original upload-keystore.jks (alias upload). Never generate a new upload key for an existing Play app."
+            exit 1
+          fi
+          KEYSTORE="$RUNNER_TEMP/original-play-upload.jks"
+          CERT="$RUNNER_TEMP/original-play-upload-certificate.pem"
+          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$KEYSTORE"
+          keytool -list -v -keystore "$KEYSTORE" -storepass "$ANDROID_KEYSTORE_PASSWORD" -alias "$ANDROID_KEY_ALIAS" > "$RUNNER_TEMP/key-info.txt"
+          ACTUAL_SHA1="$(awk -F': ' '/SHA1:/{print $2; exit}' "$RUNNER_TEMP/key-info.txt" | tr '[:lower:]' '[:upper:]')"
+          echo "Original upload-key certificate SHA1: $ACTUAL_SHA1"
+          if [[ "$ACTUAL_SHA1" != "$EXPECTED_SHA1" ]]; then
+            echo "::error::Configured keystore SHA1 does not match the Play Console upload certificate. Expected $EXPECTED_SHA1 but found $ACTUAL_SHA1. Refusing to sign."
+            exit 1
+          fi
+          keytool -exportcert -rfc -keystore "$KEYSTORE" -storepass "$ANDROID_KEYSTORE_PASSWORD" -alias "$ANDROID_KEY_ALIAS" -file "$CERT"
+          jarsigner -sigalg SHA256withRSA -digestalg SHA-256 -keystore "$KEYSTORE" -storepass "$ANDROID_KEYSTORE_PASSWORD" -keypass "$ANDROID_KEY_PASSWORD" app/build/outputs/bundle/release/app-release.aab "$ANDROID_KEY_ALIAS"
           jarsigner -verify -verbose -certs app/build/outputs/bundle/release/app-release.aab
           mkdir -p signing-output
-          cp "$KEYSTORE" signing-output/Ghost-Editorz-Upload.jks
-          cp "$CERT" signing-output/Ghost-Editorz-Upload-Certificate.pem
-          printf 'Alias: GhostEditorzUpload\nStore type: JKS\nStore password: %s\nKey password: %s\n\nIMPORTANT: Keep this keystore and passwords safe. Future app updates must use this exact key.\n' "$STORE_PASS" "$KEY_PASS" > signing-output/KEY-DETAILS.txt
-          echo "AAB signature verification completed."
+          cp "$CERT" signing-output/Play-Console-Expected-Upload-Certificate.pem
+          printf 'Alias: %s\nStore type: original user-provided keystore\nCertificate SHA1: %s\n' "$ANDROID_KEY_ALIAS" "$ACTUAL_SHA1" > signing-output/KEY-DETAILS.txt
+          echo "AAB signed with the original Play Console upload certificate and verified."
       - name: Upload signed Ghost Editorz AAB
         uses: actions/upload-artifact@v4
         with:
