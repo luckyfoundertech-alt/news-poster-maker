@@ -530,28 +530,35 @@ jobs:
           python3 - <<'PY'
           from pathlib import Path
           import re
-          variables = Path("android/variables.gradle")
-          if not variables.exists():
-              raise SystemExit("android/variables.gradle was not generated")
-          body = variables.read_text()
-          matches = list(re.finditer(r"(?m)^(\\s*minSdkVersion\\s*=\\s*)\\d+", body))
-          if len(matches) != 1:
-              raise SystemExit(f"Expected exactly one minSdkVersion in variables.gradle, found {len(matches)}")
-          body = re.sub(r"(?m)^(\\s*minSdkVersion\\s*=\\s*)\\d+", r"\\g<1>24", body)
-          variables.write_text(body)
           app = Path("android/app/build.gradle")
-          app_body = app.read_text()
-          # Capacitor's generated app module must consume the centralized minSdk value.
-          if not re.search(r"minSdkVersion\\s+rootProject\\.ext\\.minSdkVersion", app_body):
-              if re.search(r"minSdkVersion\\s+\\d+", app_body):
-                  app_body = re.sub(r"minSdkVersion\\s+\\d+", "minSdkVersion 24", app_body, count=1)
-              else:
-                  raise SystemExit("Could not locate app module minSdkVersion declaration")
-              app.write_text(app_body)
-          value = re.search(r"(?m)^\\s*minSdkVersion\\s*=\\s*(\\d+)", variables.read_text())
-          if not value or int(value.group(1)) < 24:
-              raise SystemExit("Google Play minimum SDK validation failed")
-          print("Verified Android minSdkVersion = 24")
+          if not app.exists():
+              raise SystemExit("android/app/build.gradle was not generated")
+          body = app.read_text()
+          # Capacitor may use either a literal minSdk or variables.gradle reference.
+          body, count = re.subn(
+              r"minSdkVersion[ \t]+(?:rootProject[.]ext[.]minSdkVersion|[0-9]+)",
+              "minSdkVersion 24",
+              body,
+              count=1,
+          )
+          if count != 1:
+              raise SystemExit("Could not safely locate the app module minSdkVersion declaration")
+          app.write_text(body)
+          # Also update the shared variable if this Capacitor version defines it.
+          variables = Path("android/variables.gradle")
+          if variables.exists():
+              shared = variables.read_text()
+              shared, changed = re.subn(
+                  r"(?m)^([ \t]*minSdkVersion[ \t]*=[ \t]*)[0-9]+",
+                  lambda match: match.group(1) + "24",
+                  shared,
+              )
+              if changed:
+                  variables.write_text(shared)
+          verify = re.search(r"minSdkVersion[ \t]+24", app.read_text())
+          if not verify:
+              raise SystemExit("Final Android minSdkVersion validation failed")
+          print("Verified Android app module minSdkVersion = 24")
           PY
       - name: Apply NEWS Studio launcher icon
         run: |
