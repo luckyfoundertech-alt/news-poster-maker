@@ -1,6 +1,6 @@
 {
-  "appId": "com.luckyfoundertech.news",
-  "appName": "NEWS Studio",
+  "appId": "com.luckyfoundertech.ghosteditorz",
+  "appName": "Ghost Editorz",
   "webDir": "www",
   "bundledWebRuntime": false,
   "android": {
