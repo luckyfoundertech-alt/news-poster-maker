@@ -638,7 +638,6 @@ jobs:
       - name: Verify compiled AAB manifest minimum SDK
         run: |
           python3 - <<'PY'
-          import re
           import zipfile
           from pathlib import Path
 
@@ -651,10 +650,17 @@ jobs:
 
           # AAB manifests use protobuf-encoded XML. Verify the actual uses-sdk
           # attribute in the compiled base manifest, not just Gradle inputs.
-          match = re.search(rb"minSdkVersion\\x1a\\x02([0-9]+)", manifest)
-          if not match:
+          needle = b"minSdkVersion" + bytes([0x1a, 0x02])
+          position = manifest.find(needle)
+          if position < 0:
               raise SystemExit("Could not read minSdkVersion from compiled AAB manifest")
-          min_sdk = int(match.group(1))
+          start = position + len(needle)
+          end = start
+          while end < len(manifest) and 48 <= manifest[end] <= 57:
+              end += 1
+          if end == start:
+              raise SystemExit("Compiled AAB manifest has an invalid minSdkVersion value")
+          min_sdk = int(manifest[start:end].decode("ascii"))
           print(f"Compiled AAB manifest minSdkVersion = {min_sdk}")
           if min_sdk < 24:
               raise SystemExit(f"Play protection requires minSdkVersion >= 24; bundle contains {min_sdk}")
