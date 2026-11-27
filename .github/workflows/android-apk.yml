@@ -1,4 +1,4 @@
-name: Build NEWS Studio Android AAB
+name: Build Ghost Editorz Android AAB
 on:
   workflow_dispatch:
   push:
@@ -12,7 +12,7 @@ on:
       - 'scripts/**'
       - '.github/workflows/android-apk.yml'
 concurrency:
-  group: news-studio-android-${{ github.ref }}
+  group: ghost-editorz-android-${{ github.ref }}
   cancel-in-progress: true
 permissions:
   contents: read
@@ -591,11 +591,36 @@ jobs:
         run: |
           ./gradlew --no-daemon --max-workers=2 bundleRelease
           test -s app/build/outputs/bundle/release/app-release.aab
-      - name: Upload release AAB for upload-key signing
+      - name: Generate upload key, sign and verify release AAB
+        working-directory: android
+        shell: bash
+        run: |
+          set -euo pipefail
+          KEYSTORE="$RUNNER_TEMP/ghost-editorz-upload.jks"
+          CERT="$RUNNER_TEMP/ghost-editorz-upload-certificate.pem"
+          STORE_PASS="$(openssl rand -hex 24)"
+          KEY_PASS="$STORE_PASS"
+          keytool -genkeypair -noprompt -v -keystore "$KEYSTORE" -storetype JKS -storepass "$STORE_PASS" -keypass "$KEY_PASS" -alias GhostEditorzUpload -keyalg RSA -keysize 4096 -validity 10000 -dname "CN=Ghost Editorz, OU=Android, O=Lucky Founder Tech, L=Durg, ST=Chhattisgarh, C=IN"
+          keytool -exportcert -rfc -keystore "$KEYSTORE" -storepass "$STORE_PASS" -alias GhostEditorzUpload -file "$CERT"
+          jarsigner -sigalg SHA256withRSA -digestalg SHA-256 -keystore "$KEYSTORE" -storepass "$STORE_PASS" -keypass "$KEY_PASS" app/build/outputs/bundle/release/app-release.aab GhostEditorzUpload
+          jarsigner -verify -verbose -certs app/build/outputs/bundle/release/app-release.aab
+          mkdir -p signing-output
+          cp "$KEYSTORE" signing-output/Ghost-Editorz-Upload.jks
+          cp "$CERT" signing-output/Ghost-Editorz-Upload-Certificate.pem
+          printf 'Alias: GhostEditorzUpload\nStore type: JKS\nStore password: %s\nKey password: %s\n\nIMPORTANT: Keep this keystore and passwords safe. Future app updates must use this exact key.\n' "$STORE_PASS" "$KEY_PASS" > signing-output/KEY-DETAILS.txt
+          echo "AAB signature verification completed."
+      - name: Upload signed Ghost Editorz AAB
         uses: actions/upload-artifact@v4
         with:
-          name: NEWS-Studio-Android-AAB-Release
+          name: Ghost-Editorz-Play-Store-Release-AAB
           path: android/app/build/outputs/bundle/release/app-release.aab
+          if-no-files-found: error
+          retention-days: 30
+      - name: Upload Ghost Editorz upload key backup
+        uses: actions/upload-artifact@v4
+        with:
+          name: Ghost-Editorz-Upload-Key-Backup
+          path: android/signing-output/
           if-no-files-found: error
           retention-days: 30
       - name: Upload dependency security audit report
